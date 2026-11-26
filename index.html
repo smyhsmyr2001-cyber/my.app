@@ -3,12 +3,12 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>إدارة التوزيع والمخازن والحسابات</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة التوزيع والمخازن</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: Tahoma, Arial, sans-serif;
             background-color: #f1f5f9;
         }
     </style>
@@ -16,213 +16,201 @@
 
 <body class="pb-24 text-slate-800">
 
-    <!-- Top Header -->
-    <header class="bg-slate-900 text-white p-3.5 shadow-md sticky top-0 z-20 flex justify-between items-center">
+    <!-- Header -->
+    <header class="bg-slate-900 text-white p-3.5 sticky top-0 z-20 flex justify-between items-center shadow">
         <div>
-            <h1 class="text-base font-bold">إدارة التوزيع والمخزون</h1>
-            <p class="text-[11px] text-slate-300">فواتير • عملاء GPS • متابعة أسبوعية • رصيد</p>
+            <h1 class="text-base font-bold">إدارة التوزيع والمخازن</h1>
+            <p class="text-[11px] text-slate-300">فواتير • تجار ومواقع • مخزن • رصيد</p>
         </div>
         <div class="flex gap-1.5">
-            <button type="button" onclick="exportAllData()"
-                class="bg-slate-800 hover:bg-slate-700 text-xs px-2.5 py-1.5 rounded border border-slate-600">💾
-                نسخ</button>
-            <button type="button" onclick="document.getElementById('importFile').click()"
-                class="bg-slate-800 hover:bg-slate-700 text-xs px-2.5 py-1.5 rounded border border-slate-600">📂
-                استعادة</button>
-            <input type="file" id="importFile" accept=".json" class="hidden" onchange="importAllData(event)">
+            <button type="button" onclick="exportBackup()"
+                class="bg-slate-800 hover:bg-slate-700 text-xs px-2.5 py-1.5 rounded border border-slate-600">نسخ</button>
+            <button type="button" onclick="document.getElementById('backupInput').click()"
+                class="bg-slate-800 hover:bg-slate-700 text-xs px-2.5 py-1.5 rounded border border-slate-600">استعادة</button>
+            <input type="file" id="backupInput" accept=".json" class="hidden" onchange="importBackup(event)">
         </div>
     </header>
 
-    <!-- Main Navigation Tabs -->
-    <nav class="grid grid-cols-4 bg-white shadow-sm border-b sticky top-[62px] z-20 text-xs font-bold">
-        <button type="button" onclick="switchTab('invoices')" id="nav-invoices"
-            class="py-3 text-blue-700 border-b-2 border-blue-700">🧾 الفواتير</button>
-        <button type="button" onclick="switchTab('merchants')" id="nav-merchants"
-            class="py-3 text-slate-500 border-b-2 border-transparent">🏪 التجار</button>
-        <button type="button" onclick="switchTab('warehouse')" id="nav-warehouse"
-            class="py-3 text-slate-500 border-b-2 border-transparent">📦 المخزن</button>
-        <button type="button" onclick="switchTab('finance')" id="nav-finance"
-            class="py-3 text-slate-500 border-b-2 border-transparent">💰 الرصيد</button>
+    <!-- Navigation -->
+    <nav class="grid grid-cols-4 bg-white border-b sticky top-[60px] z-20 text-xs font-bold shadow-sm">
+        <button type="button" id="tabBtn-invoices" onclick="openPage('invoices')"
+            class="py-3 text-blue-700 border-b-2 border-blue-700">الفواتير</button>
+        <button type="button" id="tabBtn-merchants" onclick="openPage('merchants')"
+            class="py-3 text-slate-500 border-b-2 border-transparent">التجار</button>
+        <button type="button" id="tabBtn-warehouse" onclick="openPage('warehouse')"
+            class="py-3 text-slate-500 border-b-2 border-transparent">المخزن</button>
+        <button type="button" id="tabBtn-finance" onclick="openPage('finance')"
+            class="py-3 text-slate-500 border-b-2 border-transparent">الرصيد</button>
     </nav>
 
     <main class="max-w-lg mx-auto p-3 space-y-4">
 
-        <!-- Due Visits Reminder Banner -->
-        <div id="dueVisitsBanner" class="hidden bg-amber-50 border border-amber-300 rounded-xl p-3 shadow-sm">
+        <!-- Due Visits Reminder -->
+        <div id="dueBox" class="hidden bg-amber-50 border border-amber-300 rounded-xl p-3">
             <div class="flex justify-between items-center">
-                <p class="text-xs font-bold text-amber-900">⏰ تذكير مواعيد زيارات العملاء (بعد أسبوع)</p>
-                <button type="button" onclick="switchTab('merchants')"
-                    class="text-[11px] bg-amber-600 text-white px-2.5 py-1 rounded font-bold">عرض الكل</button>
+                <span class="text-xs font-bold text-amber-900">تذكير مواعيد الزيارات الأسبوعية</span>
+                <button type="button" onclick="openPage('merchants')"
+                    class="text-[11px] bg-amber-600 text-white px-2 py-0.5 rounded font-bold">التجار</button>
             </div>
-            <div id="dueVisitsBannerList" class="mt-2 space-y-1 text-xs text-amber-950"></div>
+            <div id="dueList" class="mt-2 space-y-1 text-xs text-amber-950"></div>
         </div>
 
-        <!-- ================= 1. INVOICES TAB ================= -->
-        <section id="tab-invoices" class="space-y-4">
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <!-- ================= 1. INVOICES ================= -->
+        <section id="page-invoices" class="space-y-4">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                 <div class="flex justify-between items-center mb-3">
-                    <h2 id="invoiceFormTitle" class="text-sm font-bold text-blue-900">➕ فاتورة جديدة</h2>
-                    <button type="button" id="cancelEditInvoiceBtn" onclick="cancelInvoiceEdit()"
+                    <h2 id="invFormHeading" class="text-sm font-bold text-blue-900">فاتورة جديدة</h2>
+                    <button type="button" id="cancelInvEditBtn" onclick="resetInvoiceForm()"
                         class="hidden text-xs bg-rose-100 text-rose-700 px-2.5 py-1 rounded font-bold">إلغاء
                         التعديل</button>
                 </div>
 
-                <form id="invoiceForm" onsubmit="saveInvoice(event)" class="space-y-3">
-                    <input type="hidden" id="editingInvoiceId" value="">
+                <form onsubmit="submitInvoice(event)" class="space-y-3">
+                    <input type="hidden" id="editingInvId" value="">
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">التاجر / المحل *</label>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">اختر التاجر *</label>
                         <select id="invMerchantSelect" required
                             class="w-full p-2.5 border border-slate-300 rounded-lg bg-slate-50 text-sm"></select>
                     </div>
 
-                    <!-- Barcode & Search Box -->
                     <div class="bg-blue-50/70 p-2.5 rounded-lg border border-blue-200 space-y-2">
                         <label class="block text-xs font-bold text-blue-900">إضافة صنف بالباركود أو البحث بالاسم</label>
                         <div class="flex gap-1.5">
-                            <input type="text" id="invBarcodeInput" onkeydown="handleBarcodeEnter(event)"
-                                placeholder="امسح أو اكتب الباركود واضغط Enter..."
+                            <input type="text" id="invBarcodeInput"
+                                onkeydown="if(event.key==='Enter'){event.preventDefault();addByBarcode();}"
+                                placeholder="باركود الصنف..."
                                 class="flex-1 p-2 border border-blue-300 rounded-lg bg-white text-xs">
                             <button type="button" onclick="addByBarcode()"
-                                class="bg-blue-700 hover:bg-blue-800 text-white px-3 py-2 rounded-lg text-xs font-bold">إضافة</button>
+                                class="bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-bold">إضافة</button>
                         </div>
-                        <input type="text" id="invProductSearch" oninput="renderInvoiceProductPicker()"
-                            placeholder="🔍 ابحث باسم الصنف لإضافته..."
+                        <input type="text" id="invSearchInput" oninput="renderInvPicker()"
+                            placeholder="ابحث باسم الصنف..."
                             class="w-full p-2 border border-slate-300 rounded-lg bg-white text-xs">
-                        <div id="invProductPicker" class="max-h-36 overflow-y-auto space-y-1.5 pt-1"></div>
+                        <div id="invPickerList" class="max-h-40 overflow-y-auto space-y-1.5 pt-1"></div>
                     </div>
 
-                    <!-- Selected Invoice Items -->
                     <div>
                         <div class="flex justify-between items-center mb-1.5">
-                            <span class="text-xs font-bold text-slate-700">أصناف الفاتورة:</span>
-                            <span id="invLiveTotal"
+                            <span class="text-xs font-bold text-slate-700">أصناف الفاتورة</span>
+                            <span id="invTotalBadge"
                                 class="text-xs font-bold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded">الإجمالي:
                                 0.00 ج.م</span>
                         </div>
-                        <div id="invSelectedItemsContainer" class="space-y-2">
-                            <p class="text-center text-xs text-slate-400 py-3 border border-dashed rounded-lg">لم يتم
-                                إضافة أصناف بعد</p>
+                        <div id="invDraftItems" class="space-y-2">
+                            <p class="text-center text-xs text-slate-400 py-3 border border-dashed rounded-lg">لا توجد
+                                أصناف مضافة</p>
                         </div>
                     </div>
 
-                    <!-- Paid & Remaining Box -->
                     <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
                         <div class="grid grid-cols-2 gap-2">
                             <div>
-                                <label class="block text-[11px] font-bold text-slate-700 mb-1">المدفوع من المحل
-                                    (ج.م)</label>
-                                <input type="number" min="0" step="0.01" id="invPaidAmount" value="0"
-                                    oninput="updatePaymentSummary()"
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">المدفوع (ج.م)</label>
+                                <input type="number" min="0" step="0.01" id="invPaidInput" value="0"
+                                    oninput="refreshPaymentBox()"
                                     class="w-full p-2 border border-slate-300 rounded-lg bg-white text-sm font-bold text-emerald-700">
                             </div>
                             <div>
-                                <label class="block text-[11px] font-bold text-slate-700 mb-1">المتبقي على المحل
-                                    (ج.م)</label>
-                                <div id="invRemainingDisplay"
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">المتبقي (ج.م)</label>
+                                <div id="invRemainingBox"
                                     class="w-full p-2 border border-slate-200 rounded-lg bg-rose-50 text-sm font-extrabold text-rose-700 text-center">
                                     0.00 ج.م</div>
                             </div>
                         </div>
                         <div class="flex gap-1.5">
-                            <button type="button" onclick="setPaidFullAmount()"
-                                class="flex-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 py-1.5 rounded text-[11px] font-bold">دفع
-                                كامل الفاتورة</button>
+                            <button type="button" onclick="setPaidFull()"
+                                class="flex-1 bg-emerald-100 text-emerald-900 py-1.5 rounded text-[11px] font-bold">دفع
+                                كامل</button>
                             <button type="button" onclick="setPaidZero()"
-                                class="bg-slate-200 hover:bg-slate-300 text-slate-700 py-1.5 px-3 rounded text-[11px] font-bold">آجل
-                                بالكامل (0)</button>
+                                class="bg-slate-200 text-slate-700 py-1.5 px-3 rounded text-[11px] font-bold">آجل
+                                (0)</button>
                         </div>
                     </div>
 
-                    <button type="submit" id="saveInvoiceBtn"
-                        class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-lg font-bold text-sm shadow">
-                        ✅ حفظ وعرض الفاتورة
-                    </button>
+                    <button type="submit" id="saveInvBtn"
+                        class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-lg font-bold text-sm">حفظ
+                        وعرض الفاتورة</button>
                 </form>
             </div>
 
-            <!-- Saved Invoices List -->
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                 <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-sm font-bold text-slate-800">📋 سجل الفواتير</h2>
-                    <span id="invoicesBadgeCount"
-                        class="text-xs bg-slate-200 px-2 py-0.5 rounded-full font-bold">0</span>
+                    <h2 class="text-sm font-bold text-slate-800">سجل الفواتير</h2>
+                    <span id="invCountBadge" class="text-xs bg-slate-200 px-2 py-0.5 rounded-full font-bold">0</span>
                 </div>
-                <div id="invoicesListContainer" class="space-y-2.5"></div>
+                <div id="invHistoryList" class="space-y-2.5"></div>
             </div>
         </section>
 
-        <!-- ================= 2. MERCHANTS & WEEKLY REMINDERS TAB ================= -->
-        <section id="tab-merchants" class="hidden space-y-4">
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                <h2 id="merchantFormTitle" class="text-sm font-bold text-blue-900 mb-3">➕ إضافة / تعديل تاجر</h2>
-                <form id="merchantForm" onsubmit="saveMerchant(event)" class="space-y-2.5">
-                    <input type="hidden" id="merchantEditId" value="">
-                    <input type="text" id="merchantName" placeholder="اسم المحل أو التاجر *" required
+        <!-- ================= 2. MERCHANTS ================= -->
+        <section id="page-merchants" class="hidden space-y-4">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <h2 id="merchFormHeading" class="text-sm font-bold text-blue-900 mb-3">إضافة / تعديل تاجر</h2>
+                <form onsubmit="submitMerchant(event)" class="space-y-2.5">
+                    <input type="hidden" id="editingMerchId" value="">
+                    <input type="text" id="merchNameInput" placeholder="اسم المحل أو التاجر *" required
                         class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
-                    <input type="text" id="merchantArea" placeholder="القرية / المنطقة / الشارع"
+                    <input type="text" id="merchAreaInput" placeholder="المنطقة / القرية / العنوان"
                         class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
-                    <input type="tel" id="merchantPhone" placeholder="رقم الهاتف / واتساب"
+                    <input type="tel" id="merchPhoneInput" placeholder="رقم الهاتف / واتساب"
                         class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
 
                     <div>
-                        <label class="block text-[11px] font-bold text-slate-600 mb-1">ميعاد الزيارة القادمة (تلقائي بعد
-                            أسبوع من الفاتورة)</label>
-                        <input type="date" id="merchantNextVisit"
+                        <label class="block text-[11px] font-bold text-slate-600 mb-1">ميعاد الزيارة القادمة (تلقائي +7
+                            أيام مع الفاتورة)</label>
+                        <input type="date" id="merchNextVisitInput"
                             class="w-full p-2 border border-slate-300 rounded-lg text-xs bg-slate-50">
                     </div>
 
                     <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 space-y-2">
-                        <div class="flex items-center justify-between gap-1.5">
-                            <button type="button" id="gpsCaptureBtn" onclick="captureMerchantGPS()"
-                                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-2.5 rounded-lg text-xs font-bold">
-                                📍 التقاط موقع GPS
-                            </button>
-                            <button type="button" onclick="previewCurrentLocation()"
-                                class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-2.5 rounded-lg text-xs font-bold">
-                                🗺️ فتح الموقع
-                            </button>
-                            <button type="button" onclick="clearMerchantGPS()"
-                                class="bg-slate-200 hover:bg-slate-300 text-slate-700 py-2 px-2 rounded-lg text-xs font-bold">مسح</button>
+                        <div class="flex gap-1.5">
+                            <button type="button" id="gpsBtn" onclick="getGPSLocation()"
+                                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-2.5 rounded-lg text-xs font-bold">التقاط
+                                موقع GPS</button>
+                            <button type="button" onclick="openInputMap()"
+                                class="bg-indigo-600 text-white py-2 px-2.5 rounded-lg text-xs font-bold">فتح
+                                الخريطة</button>
+                            <button type="button" onclick="document.getElementById('merchLocInput').value=''"
+                                class="bg-slate-200 text-slate-700 py-2 px-2 rounded-lg text-xs font-bold">مسح</button>
                         </div>
-                        <input type="text" id="merchantGpsUrl"
+                        <input type="text" id="merchLocInput"
                             placeholder="رابط الخريطة أو الإحداثيات (مثال: 30.296,31.742)"
-                            class="w-full p-2 border border-slate-300 rounded-lg bg-white text-xs text-slate-700">
-                        <p id="gpsStatusText" class="text-[11px] text-slate-500">يمكنك التقاط GPS أو لصق رابط/إحداثيات
-                            يدوية ثم الضغط على "حفظ التاجر".</p>
+                            class="w-full p-2 border border-slate-300 rounded-lg bg-white text-xs">
+                        <p id="gpsMsg" class="text-[11px] text-slate-500">يمكنك التقاط الموقع أو لصق رابط/إحداثيات ثم
+                            الضغط على حفظ التاجر.</p>
                     </div>
 
                     <div class="flex gap-2 pt-1">
-                        <button type="submit" id="merchantSubmitBtn"
+                        <button type="submit" id="saveMerchBtn"
                             class="flex-1 bg-blue-700 hover:bg-blue-800 text-white py-2.5 rounded-lg font-bold text-sm">حفظ
                             التاجر</button>
-                        <button type="button" id="merchantCancelBtn" onclick="resetMerchantForm()"
+                        <button type="button" id="cancelMerchBtn" onclick="resetMerchantForm()"
                             class="hidden bg-slate-400 text-white px-4 py-2.5 rounded-lg font-bold text-sm">إلغاء</button>
                     </div>
                 </form>
             </div>
 
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                <input type="text" id="merchantSearchInput" oninput="renderMerchants()"
-                    placeholder="🔍 بحث باسم التاجر أو القرية..."
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <input type="text" id="merchSearchInput" oninput="renderMerchants()"
+                    placeholder="بحث باسم التاجر أو المنطقة..."
                     class="w-full p-2 border border-slate-300 rounded-lg text-sm mb-3 bg-slate-50">
-                <div id="merchantsListContainer" class="space-y-2.5"></div>
+                <div id="merchList" class="space-y-2.5"></div>
             </div>
         </section>
 
-        <!-- ================= 3. WAREHOUSE / PRODUCTS TAB ================= -->
-        <section id="tab-warehouse" class="hidden space-y-4">
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                <h2 id="productFormTitle" class="text-sm font-bold text-blue-900 mb-3">➕ إضافة صنف جديد للمخزن</h2>
-                <form id="productForm" onsubmit="saveProductForm(event)" class="space-y-2.5">
-                    <input type="hidden" id="productEditId" value="">
-
+        <!-- ================= 3. WAREHOUSE ================= -->
+        <section id="page-warehouse" class="hidden space-y-4">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <h2 id="prodFormHeading" class="text-sm font-bold text-blue-900 mb-3">إضافة / تعديل صنف</h2>
+                <form onsubmit="submitProduct(event)" class="space-y-2.5">
+                    <input type="hidden" id="editingProdId" value="">
                     <div class="grid grid-cols-2 gap-2">
-                        <input type="text" id="prodName" placeholder="اسم الصنف *" required
+                        <input type="text" id="prodNameInput" placeholder="اسم الصنف والطعم *" required
                             class="col-span-2 p-2.5 border border-slate-300 rounded-lg text-sm">
-                        <input type="text" id="prodBarcode" placeholder="الباركود (اختياري)"
+                        <input type="text" id="prodBarcodeInput" placeholder="الباركود (اختياري)"
                             class="p-2.5 border border-slate-300 rounded-lg text-sm">
-                        <select id="prodDefaultUnit"
+                        <select id="prodUnitSelect"
                             class="p-2.5 border border-slate-300 rounded-lg text-sm bg-slate-50">
                             <option value="carton">فئة البيع: كرتونة</option>
                             <option value="box">فئة البيع: علبة</option>
@@ -233,153 +221,144 @@
                         <div>
                             <label class="block text-[11px] font-bold text-slate-600 mb-1">عدد العلب في الكرتونة
                                 *</label>
-                            <input type="number" min="1" step="1" id="prodUnitsPerCarton" value="6" required
+                            <input type="number" min="1" step="1" id="prodUpcInput" value="6" required
                                 class="w-full p-2 border border-slate-300 rounded-lg text-sm">
                         </div>
                         <div>
-                            <label class="block text-[11px] font-bold text-slate-600 mb-1">الكمية المبدئية (بالعلبة)
-                                *</label>
-                            <input type="number" min="0" step="any" id="prodStockBoxes" value="0" required
+                            <label class="block text-[11px] font-bold text-slate-600 mb-1">الكمية (بالعلبة) *</label>
+                            <input type="number" min="0" step="any" id="prodStockInput" value="0" required
                                 class="w-full p-2 border border-slate-300 rounded-lg text-sm">
                         </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <label class="block text-[11px] font-bold text-slate-600 mb-1">سعر الشراء / العلبة (ج.م)
+                            <label class="block text-[11px] font-bold text-slate-600 mb-1">سعر شراء الكرتونة (ج.م)
                                 *</label>
-                            <input type="number" min="0" step="0.01" id="prodCostPerBox" value="0" required
+                            <input type="number" min="0" step="0.01" id="prodCostCartonInput" value="0" required
                                 class="w-full p-2 border border-slate-300 rounded-lg text-sm">
                         </div>
                         <div>
-                            <label class="block text-[11px] font-bold text-slate-600 mb-1">سعر البيع / العلبة (ج.م)
+                            <label class="block text-[11px] font-bold text-slate-600 mb-1">سعر بيع الكرتونة (ج.م)
                                 *</label>
-                            <input type="number" min="0" step="0.01" id="prodSellPerBox" value="0" required
+                            <input type="number" min="0" step="0.01" id="prodSellCartonInput" value="0" required
                                 class="w-full p-2 border border-slate-300 rounded-lg text-sm">
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-2 pt-1">
-                        <input type="checkbox" id="prodDeductBalance" checked class="w-4 h-4 accent-blue-700">
-                        <label for="prodDeductBalance" class="text-xs text-slate-700">خصم تكلفة الكمية المضافة من الرصيد
-                            تلقائياً</label>
-                    </div>
-
                     <div class="flex gap-2 pt-1">
-                        <button type="submit" id="productSubmitBtn"
+                        <button type="submit" id="saveProdBtn"
                             class="flex-1 bg-blue-700 hover:bg-blue-800 text-white py-2.5 rounded-lg font-bold text-sm">حفظ
-                            في المخزن</button>
-                        <button type="button" id="productCancelBtn" onclick="resetProductForm()"
+                            الصنف</button>
+                        <button type="button" id="cancelProdBtn" onclick="resetProductForm()"
                             class="hidden bg-slate-400 text-white px-4 py-2.5 rounded-lg font-bold text-sm">إلغاء</button>
                     </div>
                 </form>
             </div>
 
-            <!-- Quick Restock Stock-In Card -->
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                <h3 class="text-sm font-bold text-emerald-800 mb-2.5">📥 توريد كمية إضافية لصنف قائم</h3>
-                <form onsubmit="restockProduct(event)" class="space-y-2">
-                    <select id="restockProductSelect" required
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <h3 class="text-sm font-bold text-emerald-800 mb-2.5">توريد كمية لصنف قائم</h3>
+                <form onsubmit="submitRestock(event)" class="space-y-2">
+                    <select id="restockProdSelect" required
                         class="w-full p-2 border border-slate-300 rounded-lg text-xs bg-slate-50"></select>
                     <div class="grid grid-cols-3 gap-2">
-                        <input type="number" min="0.01" step="any" id="restockQty" placeholder="الكمية *" required
+                        <input type="number" min="0.01" step="any" id="restockQtyInput" placeholder="الكمية *" required
                             class="p-2 border border-slate-300 rounded-lg text-xs">
-                        <select id="restockUnit" class="p-2 border border-slate-300 rounded-lg text-xs bg-slate-50">
+                        <select id="restockUnitSelect"
+                            class="p-2 border border-slate-300 rounded-lg text-xs bg-slate-50">
                             <option value="carton">كرتونة</option>
                             <option value="box">علبة</option>
                         </select>
-                        <input type="number" min="0" step="0.01" id="restockTotalCost" placeholder="إجمالي التكلفة"
+                        <input type="number" min="0" step="0.01" id="restockCostInput" placeholder="التكلفة (اختياري)"
                             class="p-2 border border-slate-300 rounded-lg text-xs">
                     </div>
                     <button type="submit"
                         class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg text-xs font-bold">إضافة
-                        للمخزون وخصم من الرصيد</button>
+                        للمخزن وخصم التكلفة من الرصيد</button>
                 </form>
             </div>
 
-            <!-- Warehouse Inventory List -->
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                 <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-sm font-bold text-slate-800">📊 جرد المخزن الحالي</h3>
-                    <input type="text" id="warehouseSearch" oninput="renderWarehouse()" placeholder="بحث..."
+                    <h3 class="text-sm font-bold text-slate-800">جرد المخزن</h3>
+                    <input type="text" id="wareSearchInput" oninput="renderWarehouse()" placeholder="بحث..."
                         class="w-32 p-1.5 border border-slate-300 rounded text-xs">
                 </div>
-                <div id="warehouseListContainer" class="space-y-2.5"></div>
+                <div id="wareList" class="space-y-2.5"></div>
             </div>
         </section>
 
-        <!-- ================= 4. BALANCE, PROFIT & EXPENSES TAB ================= -->
-        <section id="tab-finance" class="hidden space-y-4">
+        <!-- ================= 4. FINANCE ================= -->
+        <section id="page-finance" class="hidden space-y-4">
             <div class="grid grid-cols-2 gap-2.5">
-                <div class="bg-white p-3.5 rounded-xl shadow-sm border border-slate-200">
+                <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
                     <p class="text-[11px] text-slate-500 font-bold">الرصيد الحالي</p>
-                    <p id="finCurrentBalance" class="text-lg font-extrabold text-blue-800 mt-1">0.00 ج.م</p>
+                    <p id="finBalanceVal" class="text-lg font-extrabold text-blue-800 mt-1">0.00 ج.م</p>
                 </div>
-                <div class="bg-white p-3.5 rounded-xl shadow-sm border border-slate-200">
+                <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
                     <p class="text-[11px] text-slate-500 font-bold">صافي أرباح اليوم</p>
-                    <p id="finTodayProfit" class="text-lg font-extrabold text-emerald-700 mt-1">0.00 ج.م</p>
+                    <p id="finProfitVal" class="text-lg font-extrabold text-emerald-700 mt-1">0.00 ج.م</p>
                 </div>
-                <div class="bg-white p-3.5 rounded-xl shadow-sm border border-slate-200">
+                <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
                     <p class="text-[11px] text-slate-500 font-bold">مبيعات اليوم (المحصل)</p>
-                    <p id="finTodaySales" class="text-sm font-bold text-slate-800 mt-1">0.00 ج.م</p>
+                    <p id="finSalesVal" class="text-sm font-bold text-slate-800 mt-1">0.00 ج.م</p>
                 </div>
-                <div class="bg-white p-3.5 rounded-xl shadow-sm border border-slate-200">
+                <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
                     <p class="text-[11px] text-slate-500 font-bold">مصاريف اليوم</p>
-                    <p id="finTodayExpenses" class="text-sm font-bold text-rose-700 mt-1">0.00 ج.م</p>
+                    <p id="finExpensesVal" class="text-sm font-bold text-rose-700 mt-1">0.00 ج.م</p>
                 </div>
             </div>
 
             <div
-                class="bg-white p-3.5 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between gap-2">
+                class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between gap-2">
                 <div class="text-xs">
-                    <p class="font-bold text-slate-700">تعديل / إضافة للرصيد</p>
-                    <p class="text-[11px] text-slate-500">تعيين أو تزويد رصيدك الحالي</p>
+                    <p class="font-bold text-slate-700">تعديل الرصيد</p>
+                    <p class="text-[11px] text-slate-500">إضافة أو خصم مبلغ من الرصيد</p>
                 </div>
                 <div class="flex gap-1.5">
-                    <input type="number" step="0.01" id="balanceAdjustInput" placeholder="مبلغ"
+                    <input type="number" step="0.01" id="balAdjInput" placeholder="مبلغ"
                         class="w-24 p-1.5 border border-slate-300 rounded text-xs">
-                    <button type="button" onclick="adjustBalance(1)"
+                    <button type="button" onclick="changeBalance(1)"
                         class="bg-emerald-600 text-white px-2.5 py-1.5 rounded text-xs font-bold">+</button>
-                    <button type="button" onclick="adjustBalance(-1)"
+                    <button type="button" onclick="changeBalance(-1)"
                         class="bg-rose-600 text-white px-2.5 py-1.5 rounded text-xs font-bold">-</button>
                 </div>
             </div>
 
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                <h3 class="text-sm font-bold text-rose-800 mb-2.5">➖ تسجيل مصروف جديد (يُخصم من الرصيد تلقائياً)</h3>
-                <form onsubmit="addExpense(event)" class="space-y-2.5">
-                    <input type="text" id="expenseTitle" placeholder="بند المصروف (مثال: بنزين، صيانة، إكرامية) *"
-                        required class="w-full p-2 border border-slate-300 rounded-lg text-sm">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <h3 class="text-sm font-bold text-rose-800 mb-2.5">تسجيل مصروف (يُخصم من الرصيد)</h3>
+                <form onsubmit="submitExpense(event)" class="space-y-2.5">
+                    <input type="text" id="expTitleInput" placeholder="بند المصروف (مثال: بنزين، صيانة) *" required
+                        class="w-full p-2 border border-slate-300 rounded-lg text-sm">
                     <div class="flex gap-2">
-                        <input type="number" min="0.01" step="0.01" id="expenseAmount" placeholder="المبلغ (ج.م) *"
-                            required class="flex-1 p-2 border border-slate-300 rounded-lg text-sm">
+                        <input type="number" min="0.01" step="0.01" id="expAmountInput" placeholder="المبلغ *" required
+                            class="flex-1 p-2 border border-slate-300 rounded-lg text-sm">
                         <button type="submit"
-                            class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-xs font-bold">تسجيل
-                            وخصم</button>
+                            class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-xs font-bold">تسجيل</button>
                     </div>
                 </form>
             </div>
 
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                <h3 class="text-sm font-bold text-slate-800 mb-3">🧾 سجل حركات الرصيد والمصاريف</h3>
-                <div id="ledgerListContainer" class="space-y-2 max-h-80 overflow-y-auto"></div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <h3 class="text-sm font-bold text-slate-800 mb-3">سجل الحركات</h3>
+                <div id="ledgerList" class="space-y-2 max-h-80 overflow-y-auto"></div>
             </div>
         </section>
 
     </main>
 
-    <!-- ================= INVOICE VIEW / PRINT MODAL ================= -->
-    <div id="invoiceModal" class="fixed inset-0 bg-black/65 hidden items-center justify-center p-3 z-50">
+    <!-- ================= INVOICE MODAL ================= -->
+    <div id="invModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-3 z-50">
         <div class="bg-white rounded-xl max-w-md w-full max-h-[92vh] overflow-y-auto p-4 shadow-2xl space-y-3">
-            <div class="text-center border-b pb-2.5">
-                <h2 class="text-base font-bold text-slate-900">فاتورة مبيعات وتوزيع</h2>
-                <p class="text-xs text-slate-500" id="modalInvCode"></p>
+            <div class="text-center border-b pb-2">
+                <h2 class="text-base font-bold">فاتورة مبيعات وتوزيع</h2>
+                <p id="mCode" class="text-xs text-slate-500"></p>
             </div>
             <div class="text-xs space-y-1 bg-slate-50 p-2.5 rounded border">
-                <p><strong>التاجر:</strong> <span id="modalMerchantName"></span></p>
-                <p><strong>المنطقة:</strong> <span id="modalMerchantArea"></span></p>
-                <p><strong>التاريخ:</strong> <span id="modalInvDate"></span></p>
-                <p><strong>ميعاد الزيارة القادمة:</strong> <span id="modalNextVisit"></span></p>
+                <p><strong>التاجر:</strong> <span id="mMerchant"></span></p>
+                <p><strong>المنطقة:</strong> <span id="mArea"></span></p>
+                <p><strong>التاريخ:</strong> <span id="mDate"></span></p>
+                <p><strong>الزيارة القادمة:</strong> <span id="mNextVisit"></span></p>
             </div>
             <table class="w-full text-xs border-collapse border border-slate-300">
                 <thead>
@@ -390,82 +369,67 @@
                         <th class="border border-slate-300 p-1.5 text-center">الإجمالي</th>
                     </tr>
                 </thead>
-                <tbody id="modalInvItemsBody"></tbody>
+                <tbody id="mItemsBody"></tbody>
             </table>
             <div class="text-xs space-y-1 border-t pt-2 font-bold">
-                <div class="flex justify-between text-slate-900">
-                    <span>إجمالي الفاتورة:</span>
-                    <span><span id="modalInvTotal"></span> ج.م</span>
-                </div>
-                <div class="flex justify-between text-emerald-700">
-                    <span>المدفوع من المحل:</span>
-                    <span><span id="modalInvPaid"></span> ج.م</span>
-                </div>
-                <div class="flex justify-between text-rose-700">
-                    <span>المتبقي على المحل:</span>
-                    <span><span id="modalInvRemaining"></span> ج.م</span>
-                </div>
+                <div class="flex justify-between"><span>الإجمالي:</span><span><span id="mTotal"></span> ج.م</span></div>
+                <div class="flex justify-between text-emerald-700"><span>المدفوع:</span><span><span id="mPaid"></span>
+                        ج.م</span></div>
+                <div class="flex justify-between text-rose-700"><span>المتبقي:</span><span><span id="mRemaining"></span>
+                        ج.م</span></div>
             </div>
-
             <div class="grid grid-cols-2 gap-2 pt-2 border-t">
-                <button type="button" onclick="openPrintableInvoiceWindow()"
-                    class="bg-blue-700 hover:bg-blue-800 text-white py-2.5 rounded-lg text-xs font-bold">🖨️ طباعة /
-                    PDF</button>
-                <button type="button" id="modalWhatsappBtn"
-                    class="bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-lg text-xs font-bold">💬 إرسال
-                    واتساب</button>
-                <button type="button" id="modalDownloadTxtBtn"
-                    class="col-span-2 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg text-xs font-bold">⬇️
-                    حفظ الفاتورة كملف</button>
-                <button type="button" id="modalEditInvBtn"
-                    class="col-span-2 bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-lg text-xs font-bold">✏️
-                    تعديل الفاتورة</button>
-                <button type="button" onclick="closeInvoiceModal()"
-                    class="col-span-2 bg-slate-600 hover:bg-slate-700 text-white py-2 rounded-lg text-xs font-bold">إغلاق</button>
+                <button type="button" onclick="printInvoiceNow()"
+                    class="bg-blue-700 hover:bg-blue-800 text-white py-2.5 rounded-lg text-xs font-bold">طباعة</button>
+                <button type="button" id="mWaBtn"
+                    class="bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-lg text-xs font-bold">واتساب</button>
+                <button type="button" id="mDlBtn"
+                    class="col-span-2 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg text-xs font-bold">تحميل
+                    ملف الفاتورة</button>
+                <button type="button" id="mEditBtn"
+                    class="col-span-2 bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-lg text-xs font-bold">تعديل
+                    الفاتورة</button>
+                <button type="button" onclick="closeInvModal()"
+                    class="col-span-2 bg-slate-600 text-white py-2 rounded-lg text-xs font-bold">إغلاق</button>
             </div>
         </div>
     </div>
 
     <script>
-        const KEYS = {
-            products: 'sys_v6_products',
-            merchants: 'sys_v6_merchants',
-            invoices: 'sys_v6_invoices',
-            expenses: 'sys_v6_expenses',
-            ledger: 'sys_v6_ledger',
-            balance: 'sys_v6_balance'
+        const DB = {
+            products: 'dist_v7_products',
+            merchants: 'dist_v7_merchants',
+            invoices: 'dist_v7_invoices',
+            expenses: 'dist_v7_expenses',
+            ledger: 'dist_v7_ledger',
+            balance: 'dist_v7_balance'
         };
 
-        const DEFAULT_PRODUCTS = [
-            { id: 'p_choco_straw', name: 'تشوكو ميكس - فراولة', barcode: '', defaultUnit: 'carton', unitsPerCarton: 6, stockBoxes: 0, costPerBox: Number((250 / 6).toFixed(2)), sellPerBox: 0 },
-            { id: 'p_choco_choc', name: 'تشوكو ميكس - شيكولاتة', barcode: '', defaultUnit: 'carton', unitsPerCarton: 6, stockBoxes: 0, costPerBox: Number((250 / 6).toFixed(2)), sellPerBox: 0 },
-            { id: 'p_choco_van', name: 'تشوكو ميكس - فانيليا', barcode: '', defaultUnit: 'carton', unitsPerCarton: 6, stockBoxes: 0, costPerBox: Number((250 / 6).toFixed(2)), sellPerBox: 0 },
-
-            { id: 'p_dodio_straw', name: 'دوديو - فراولة', barcode: '', defaultUnit: 'carton', unitsPerCarton: 6, stockBoxes: 0, costPerBox: Number((230 / 6).toFixed(2)), sellPerBox: 0 },
-            { id: 'p_dodio_choc', name: 'دوديو - شيكولاتة', barcode: '', defaultUnit: 'carton', unitsPerCarton: 6, stockBoxes: 0, costPerBox: Number((230 / 6).toFixed(2)), sellPerBox: 0 },
-            { id: 'p_dodio_van', name: 'دوديو - فانيليا', barcode: '', defaultUnit: 'carton', unitsPerCarton: 6, stockBoxes: 0, costPerBox: Number((230 / 6).toFixed(2)), sellPerBox: 0 },
-
-            { id: 'p_orelno_van', name: 'اوريلنو - فانيليا', barcode: '', defaultUnit: 'carton', unitsPerCarton: 6, stockBoxes: 0, costPerBox: Number((250 / 6).toFixed(2)), sellPerBox: 0 },
-
-            { id: 'p_vbytes_van', name: 'في بايتس - فانيليا', barcode: '', defaultUnit: 'carton', unitsPerCarton: 6, stockBoxes: 0, costPerBox: Number((250 / 6).toFixed(2)), sellPerBox: 0 },
-            { id: 'p_vbytes_straw', name: 'في بايتس - فراولة', barcode: '', defaultUnit: 'carton', unitsPerCarton: 6, stockBoxes: 0, costPerBox: Number((250 / 6).toFixed(2)), sellPerBox: 0 },
-
-            { id: 'p_wafer_van', name: 'ويفر وياكر - فانيليا', barcode: '', defaultUnit: 'carton', unitsPerCarton: 12, stockBoxes: 0, costPerBox: Number((500 / 12).toFixed(2)), sellPerBox: 0 },
-            { id: 'p_wafer_coco', name: 'ويفر وياكر - جوز هند', barcode: '', defaultUnit: 'carton', unitsPerCarton: 12, stockBoxes: 0, costPerBox: Number((500 / 12).toFixed(2)), sellPerBox: 0 },
-            { id: 'p_wafer_pist', name: 'ويفر وياكر - بستاشيو', barcode: '', defaultUnit: 'carton', unitsPerCarton: 12, stockBoxes: 0, costPerBox: Number((500 / 12).toFixed(2)), sellPerBox: 0 },
-            { id: 'p_wafer_haz', name: 'ويفر وياكر - بندق', barcode: '', defaultUnit: 'carton', unitsPerCarton: 12, stockBoxes: 0, costPerBox: Number((500 / 12).toFixed(2)), sellPerBox: 0 },
-
-            { id: 'p_plain_bisc', name: 'بسكوت سادة', barcode: '', defaultUnit: 'carton', unitsPerCarton: 6, stockBoxes: 0, costPerBox: Number((260 / 6).toFixed(2)), sellPerBox: 0 },
-            { id: 'p_dark_bisc', name: 'دارك', barcode: '', defaultUnit: 'carton', unitsPerCarton: 6, stockBoxes: 0, costPerBox: Number((260 / 6).toFixed(2)), sellPerBox: 0 },
-            { id: 'p_friendy_bisc', name: 'فريندي', barcode: '', defaultUnit: 'carton', unitsPerCarton: 6, stockBoxes: 0, costPerBox: Number((260 / 6).toFixed(2)), sellPerBox: 0 },
-            { id: 'p_forever_bisc', name: 'فور ايفر', barcode: '', defaultUnit: 'carton', unitsPerCarton: 6, stockBoxes: 0, costPerBox: Number((260 / 6).toFixed(2)), sellPerBox: 0 }
+        const INITIAL_PRODUCTS = [
+            { id: 'p1', name: 'تشوكو ميكس - فراولة', barcode: '', defaultUnit: 'carton', upc: 6, stockBoxes: 0, costCarton: 250, sellCarton: 0 },
+            { id: 'p2', name: 'تشوكو ميكس - شيكولاتة', barcode: '', defaultUnit: 'carton', upc: 6, stockBoxes: 0, costCarton: 250, sellCarton: 0 },
+            { id: 'p3', name: 'تشوكو ميكس - فانيليا', barcode: '', defaultUnit: 'carton', upc: 6, stockBoxes: 0, costCarton: 250, sellCarton: 0 },
+            { id: 'p4', name: 'دوديو - فراولة', barcode: '', defaultUnit: 'carton', upc: 6, stockBoxes: 0, costCarton: 230, sellCarton: 0 },
+            { id: 'p5', name: 'دوديو - شيكولاتة', barcode: '', defaultUnit: 'carton', upc: 6, stockBoxes: 0, costCarton: 230, sellCarton: 0 },
+            { id: 'p6', name: 'دوديو - فانيليا', barcode: '', defaultUnit: 'carton', upc: 6, stockBoxes: 0, costCarton: 230, sellCarton: 0 },
+            { id: 'p7', name: 'اوريلنو - فانيليا', barcode: '', defaultUnit: 'carton', upc: 6, stockBoxes: 0, costCarton: 250, sellCarton: 0 },
+            { id: 'p8', name: 'في بايتس - فانيليا', barcode: '', defaultUnit: 'carton', upc: 6, stockBoxes: 0, costCarton: 250, sellCarton: 0 },
+            { id: 'p9', name: 'في بايتس - فراولة', barcode: '', defaultUnit: 'carton', upc: 6, stockBoxes: 0, costCarton: 250, sellCarton: 0 },
+            { id: 'p10', name: 'ويفر وياكر - فانيليا', barcode: '', defaultUnit: 'carton', upc: 12, stockBoxes: 0, costCarton: 500, sellCarton: 0 },
+            { id: 'p11', name: 'ويفر وياكر - جوز هند', barcode: '', defaultUnit: 'carton', upc: 12, stockBoxes: 0, costCarton: 500, sellCarton: 0 },
+            { id: 'p12', name: 'ويفر وياكر - بستاشيو', barcode: '', defaultUnit: 'carton', upc: 12, stockBoxes: 0, costCarton: 500, sellCarton: 0 },
+            { id: 'p13', name: 'ويفر وياكر - بندق', barcode: '', defaultUnit: 'carton', upc: 12, stockBoxes: 0, costCarton: 500, sellCarton: 0 },
+            { id: 'p14', name: 'بسكوت سادة', barcode: '', defaultUnit: 'carton', upc: 6, stockBoxes: 0, costCarton: 260, sellCarton: 0 },
+            { id: 'p15', name: 'دارك', barcode: '', defaultUnit: 'carton', upc: 6, stockBoxes: 0, costCarton: 260, sellCarton: 0 },
+            { id: 'p16', name: 'فريندي', barcode: '', defaultUnit: 'carton', upc: 6, stockBoxes: 0, costCarton: 260, sellCarton: 0 },
+            { id: 'p17', name: 'فور ايفر', barcode: '', defaultUnit: 'carton', upc: 6, stockBoxes: 0, costCarton: 260, sellCarton: 0 }
         ];
 
-        let currentDraftItems = [];
-        let activeModalInvoice = null;
-        let paidManuallyEdited = false;
+        let draftItems = [];
+        let currentModalInv = null;
+        let manualPaid = false;
 
-        function loadArr(key) {
+        function getList(key) {
             try {
                 const raw = localStorage.getItem(key);
                 return raw ? JSON.parse(raw) : [];
@@ -474,1239 +438,932 @@
             }
         }
 
-        function saveArr(key, val) {
-            try {
-                localStorage.setItem(key, JSON.stringify(val));
-            } catch (e) {
-                alert('تعذر حفظ البيانات في ذاكرة المتصفح.');
-            }
-        }
-
-        function initDefaultCatalog() {
-            if (localStorage.getItem(KEYS.products) === null) {
-                saveArr(KEYS.products, DEFAULT_PRODUCTS);
-            }
+        function setList(key, arr) {
+            localStorage.setItem(key, JSON.stringify(arr));
         }
 
         function getBalance() {
-            const val = parseFloat(localStorage.getItem(KEYS.balance));
-            return isNaN(val) ? 0 : val;
+            const n = parseFloat(localStorage.getItem(DB.balance));
+            return isNaN(n) ? 0 : n;
         }
 
-        function setBalance(val) {
-            localStorage.setItem(KEYS.balance, Number(val).toFixed(2));
+        function setBalance(n) {
+            localStorage.setItem(DB.balance, Number(n).toFixed(2));
         }
 
-        function getTodayISO() {
+        function todayISO() {
             return new Date().toISOString().slice(0, 10);
         }
 
-        function addDaysISO(baseDateISO, days) {
-            const dt = baseDateISO ? new Date(baseDateISO + 'T12:00:00') : new Date();
-            dt.setDate(dt.getDate() + days);
-            return dt.toISOString().slice(0, 10);
+        function plusDaysISO(base, days) {
+            const d = base ? new Date(base + 'T12:00:00') : new Date();
+            d.setDate(d.getDate() + days);
+            return d.toISOString().slice(0, 10);
         }
 
-        function addLedgerEntry(type, title, amount, dateStr = null) {
-            const ledger = loadArr(KEYS.ledger);
+        function logLedger(kind, title, amount, iso = null) {
+            const list = getList(DB.ledger);
             const now = new Date();
-            ledger.unshift({
-                id: 'l_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-                type,
+            list.unshift({
+                id: 'lg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+                kind,
                 title,
                 amount: Number(Number(amount).toFixed(2)),
-                isoDate: dateStr || getTodayISO(),
-                displayDate: now.toLocaleDateString('ar-EG') + ' ' + now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+                iso: iso || todayISO(),
+                time: now.toLocaleDateString('ar-EG') + ' ' + now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
             });
-            saveArr(KEYS.ledger, ledger);
+            setList(DB.ledger, list);
         }
 
-        function switchTab(tab) {
-            ['invoices', 'merchants', 'warehouse', 'finance'].forEach(t => {
-                document.getElementById('tab-' + t).classList.add('hidden');
-                const btn = document.getElementById('nav-' + t);
-                btn.classList.remove('text-blue-700', 'border-blue-700');
-                btn.classList.add('text-slate-500', 'border-transparent');
+        function openPage(page) {
+            ['invoices', 'merchants', 'warehouse', 'finance'].forEach(p => {
+                document.getElementById('page-' + p).classList.add('hidden');
+                const b = document.getElementById('tabBtn-' + p);
+                b.classList.remove('text-blue-700', 'border-blue-700');
+                b.classList.add('text-slate-500', 'border-transparent');
             });
-
-            document.getElementById('tab-' + tab).classList.remove('hidden');
-            const active = document.getElementById('nav-' + tab);
+            document.getElementById('page-' + page).classList.remove('hidden');
+            const active = document.getElementById('tabBtn-' + page);
             active.classList.remove('text-slate-500', 'border-transparent');
             active.classList.add('text-blue-700', 'border-blue-700');
 
-            renderDueVisitsBanner();
-
-            if (tab === 'invoices') {
-                populateInvoiceMerchants();
-                renderInvoiceProductPicker();
-                renderDraftInvoiceItems();
-                renderInvoicesList();
-            } else if (tab === 'merchants') {
+            renderDueReminders();
+            if (page === 'invoices') {
+                fillMerchantSelect();
+                renderInvPicker();
+                renderDraftItems();
+                renderInvHistory();
+            } else if (page === 'merchants') {
                 renderMerchants();
-            } else if (tab === 'warehouse') {
-                populateRestockSelect();
+            } else if (page === 'warehouse') {
+                fillRestockSelect();
                 renderWarehouse();
-            } else if (tab === 'finance') {
+            } else if (page === 'finance') {
                 renderFinance();
             }
         }
 
-        // ================= WEEKLY VISIT REMINDERS =================
-        function renderDueVisitsBanner() {
-            const today = getTodayISO();
-            const merchants = loadArr(KEYS.merchants).filter(m => m.nextVisitDate && m.nextVisitDate <= today);
-            const banner = document.getElementById('dueVisitsBanner');
-            const listEl = document.getElementById('dueVisitsBannerList');
-
-            if (!merchants.length) {
-                banner.classList.add('hidden');
+        // ================= REMINDERS =================
+        function renderDueReminders() {
+            const today = todayISO();
+            const due = getList(DB.merchants).filter(m => m.nextVisit && m.nextVisit <= today);
+            const box = document.getElementById('dueBox');
+            const list = document.getElementById('dueList');
+            if (!due.length) {
+                box.classList.add('hidden');
                 return;
             }
-
-            banner.classList.remove('hidden');
-            listEl.innerHTML = merchants.slice(0, 4).map(m => `
-                <div class="flex justify-between items-center bg-white/80 px-2 py-1 rounded border border-amber-200">
-                    <span><strong>${m.name}</strong> ${m.area ? '(' + m.area + ')' : ''} — موعد: ${m.nextVisitDate}</span>
-                    <button type="button" onclick="markVisitedNextWeek('${m.id}')" class="bg-emerald-600 text-white px-2 py-0.5 rounded text-[10px] font-bold">تمت +7 أيام</button>
-                </div>
-            `).join('');
+            box.classList.remove('hidden');
+            list.innerHTML = due.slice(0, 4).map(m => `
+        <div class="flex justify-between items-center bg-white px-2 py-1 rounded border border-amber-200">
+          <span><strong>${m.name}</strong> ${m.area ? '(' + m.area + ')' : ''} - ${m.nextVisit}</span>
+          <button type="button" onclick="bumpVisit('${m.id}')" class="bg-emerald-600 text-white px-2 py-0.5 rounded text-[10px] font-bold">+7 أيام</button>
+        </div>
+      `).join('');
         }
 
-        function markVisitedNextWeek(merchantId) {
-            const merchants = loadArr(KEYS.merchants);
-            const idx = merchants.findIndex(m => String(m.id) === String(merchantId));
-            if (idx === -1) return;
-            merchants[idx].nextVisitDate = addDaysISO(getTodayISO(), 7);
-            saveArr(KEYS.merchants, merchants);
-            renderDueVisitsBanner();
+        function bumpVisit(id) {
+            const list = getList(DB.merchants);
+            const i = list.findIndex(x => String(x.id) === String(id));
+            if (i === -1) return;
+            list[i].nextVisit = plusDaysISO(todayISO(), 7);
+            setList(DB.merchants, list);
+            renderDueReminders();
             renderMerchants();
         }
 
-        // ================= MERCHANTS & GPS =================
-        function captureMerchantGPS() {
-            const btn = document.getElementById('gpsCaptureBtn');
-            const status = document.getElementById('gpsStatusText');
-            const urlInput = document.getElementById('merchantGpsUrl');
+        // ================= MERCHANTS & LOCATION =================
+        function formatMapLink(val) {
+            const s = (val || '').trim();
+            if (!s) return '';
+            if (s.startsWith('http://') || s.startsWith('https://')) return s;
+            const m = s.match(/(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/);
+            if (m) return `https://www.google.com/maps/search/?api=1&query=${m[1]},${m[2]}`;
+            return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s)}`;
+        }
 
+        function getGPSLocation() {
+            const btn = document.getElementById('gpsBtn');
+            const msg = document.getElementById('gpsMsg');
+            const input = document.getElementById('merchLocInput');
             if (!navigator.geolocation) {
-                status.textContent = 'المتصفح لا يدعم GPS. يمكنك لصق رابط الخريطة أو الإحداثيات يدوياً.';
-                status.className = 'text-[11px] text-rose-600 font-bold';
+                msg.textContent = 'المتصفح لا يدعم GPS. يمكنك لصق الإحداثيات أو الرابط يدوياً.';
                 return;
             }
-
             btn.disabled = true;
-            btn.textContent = '⏳ جاري تحديد الموقع...';
-            status.textContent = 'جاري التقاط إحداثيات GPS...';
-            status.className = 'text-[11px] text-blue-700';
+            btn.textContent = 'جاري الالتقاط...';
+            msg.textContent = 'جاري تحديد الموقع...';
 
             navigator.geolocation.getCurrentPosition(
-                (pos) => {
+                pos => {
                     const lat = pos.coords.latitude.toFixed(6);
                     const lng = pos.coords.longitude.toFixed(6);
-                    urlInput.value = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+                    input.value = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
                     btn.disabled = false;
-                    btn.textContent = '✅ تم التقاط الموقع';
-                    status.textContent = `تم التقاط (${lat}, ${lng}) — اضغط "حفظ التاجر" لحفظه نهائياً.`;
-                    status.className = 'text-[11px] text-emerald-700 font-bold';
-                    setTimeout(() => { btn.textContent = '📍 التقاط موقع GPS'; }, 2500);
+                    btn.textContent = 'التقاط موقع GPS';
+                    msg.textContent = `تم الالتقاط (${lat}, ${lng}) — اضغط حفظ التاجر لتثبيته.`;
                 },
-                (err) => {
+                err => {
                     btn.disabled = false;
-                    btn.textContent = '📍 التقاط موقع GPS';
-                    let msg = 'تعذر التقاط GPS.';
-                    if (err.code === 1) msg = 'إذن الموقع مرفوض. اسمح بالوصول للموقع من إعدادات المتصفح/التطبيق أو اكتب الإحداثيات يدوياً.';
-                    else if (err.code === 2) msg = 'إشارة GPS غير متاحة حالياً. فعّل الموقع أو أدخل الإحداثيات يدوياً.';
-                    else if (err.code === 3) msg = 'انتهت مهلة GPS. جرّب مرة أخرى أو أدخل الرابط/الإحداثيات يدوياً.';
-                    status.textContent = msg;
-                    status.className = 'text-[11px] text-rose-600 font-bold';
+                    btn.textContent = 'التقاط موقع GPS';
+                    msg.textContent = err.code === 1
+                        ? 'تم رفض إذن الموقع. فعّله من الإعدادات أو اكتب الإحداثيات يدوياً.'
+                        : 'تعذر التقاط الإشارة الآن. أدخل الإحداثيات أو الرابط يدوياً.';
                 },
                 { enableHighAccuracy: false, timeout: 12000, maximumAge: 60000 }
             );
         }
 
-        function previewCurrentLocation() {
-            const raw = document.getElementById('merchantGpsUrl').value.trim();
-            if (!raw) return alert('لا يوجد موقع مكتوب أو ملتقط لفتحه.');
-            const link = normalizeGpsLink(raw);
+        function openInputMap() {
+            const link = formatMapLink(document.getElementById('merchLocInput').value);
+            if (!link) return alert('أدخل أو التقط موقعاً أولاً.');
             window.open(link, '_blank', 'noopener');
         }
 
-        function clearMerchantGPS() {
-            document.getElementById('merchantGpsUrl').value = '';
-            document.getElementById('gpsStatusText').textContent = 'تم مسح حقل الموقع.';
-        }
-
-        function normalizeGpsLink(raw) {
-            if (!raw) return '';
-            const trimmed = raw.trim();
-            if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
-            const coordMatch = trimmed.match(/(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/);
-            if (coordMatch) {
-                return `https://www.google.com/maps/search/?api=1&query=${coordMatch[1]},${coordMatch[2]}`;
-            }
-            return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(trimmed)}`;
-        }
-
-        function saveMerchant(e) {
+        function submitMerchant(e) {
             e.preventDefault();
-            const name = document.getElementById('merchantName').value.trim();
-            const area = document.getElementById('merchantArea').value.trim();
-            const phone = document.getElementById('merchantPhone').value.trim();
-            const nextVisitDate = document.getElementById('merchantNextVisit').value || addDaysISO(getTodayISO(), 7);
-            const rawGps = document.getElementById('merchantGpsUrl').value.trim();
-            const gps = normalizeGpsLink(rawGps);
-            const editId = document.getElementById('merchantEditId').value;
+            const editId = document.getElementById('editingMerchId').value;
+            const name = document.getElementById('merchNameInput').value.trim();
+            const area = document.getElementById('merchAreaInput').value.trim();
+            const phone = document.getElementById('merchPhoneInput').value.trim();
+            const nextVisit = document.getElementById('merchNextVisitInput').value || plusDaysISO(todayISO(), 7);
+            const loc = formatMapLink(document.getElementById('merchLocInput').value);
+            if (!name) return;
 
-            if (!name) return alert('برجاء إدخال اسم التاجر أو المحل.');
-
-            const merchants = loadArr(KEYS.merchants);
+            const list = getList(DB.merchants);
             if (editId) {
-                const idx = merchants.findIndex(m => String(m.id) === String(editId));
-                if (idx !== -1) {
-                    merchants[idx] = { ...merchants[idx], name, area, phone, gps, nextVisitDate };
-                }
+                const i = list.findIndex(x => String(x.id) === String(editId));
+                if (i !== -1) list[i] = { ...list[i], name, area, phone, nextVisit, loc };
             } else {
-                merchants.unshift({
-                    id: 'm_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-                    name,
-                    area,
-                    phone,
-                    gps,
-                    nextVisitDate
-                });
+                list.unshift({ id: 'm_' + Date.now(), name, area, phone, nextVisit, loc });
             }
-
-            saveArr(KEYS.merchants, merchants);
+            setList(DB.merchants, list);
             resetMerchantForm();
             renderMerchants();
-            populateInvoiceMerchants();
-            renderDueVisitsBanner();
-            alert('تم حفظ التاجر' + (gps ? ' مع رابط الموقع بنجاح.' : '.'));
+            fillMerchantSelect();
+            renderDueReminders();
+            alert('تم حفظ التاجر.');
         }
 
-        function editMerchant(id) {
-            const m = loadArr(KEYS.merchants).find(x => String(x.id) === String(id));
+        function startEditMerchant(id) {
+            const m = getList(DB.merchants).find(x => String(x.id) === String(id));
             if (!m) return;
-            document.getElementById('merchantEditId').value = m.id;
-            document.getElementById('merchantName').value = m.name || '';
-            document.getElementById('merchantArea').value = m.area || '';
-            document.getElementById('merchantPhone').value = m.phone || '';
-            document.getElementById('merchantNextVisit').value = m.nextVisitDate || addDaysISO(getTodayISO(), 7);
-            document.getElementById('merchantGpsUrl').value = m.gps || '';
-            document.getElementById('merchantFormTitle').textContent = '✏️ تعديل بيانات التاجر';
-            document.getElementById('merchantSubmitBtn').textContent = 'تحديث التاجر';
-            document.getElementById('merchantCancelBtn').classList.remove('hidden');
+            document.getElementById('editingMerchId').value = m.id;
+            document.getElementById('merchNameInput').value = m.name || '';
+            document.getElementById('merchAreaInput').value = m.area || '';
+            document.getElementById('merchPhoneInput').value = m.phone || '';
+            document.getElementById('merchNextVisitInput').value = m.nextVisit || plusDaysISO(todayISO(), 7);
+            document.getElementById('merchLocInput').value = m.loc || '';
+            document.getElementById('merchFormHeading').textContent = 'تعديل تاجر';
+            document.getElementById('saveMerchBtn').textContent = 'تحديث التاجر';
+            document.getElementById('cancelMerchBtn').classList.remove('hidden');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function deleteMerchant(id) {
             if (!confirm('حذف هذا التاجر؟')) return;
-            const list = loadArr(KEYS.merchants).filter(x => String(x.id) !== String(id));
-            saveArr(KEYS.merchants, list);
+            setList(DB.merchants, getList(DB.merchants).filter(x => String(x.id) !== String(id)));
             renderMerchants();
-            populateInvoiceMerchants();
-            renderDueVisitsBanner();
+            fillMerchantSelect();
+            renderDueReminders();
         }
 
         function resetMerchantForm() {
-            document.getElementById('merchantForm').reset();
-            document.getElementById('merchantEditId').value = '';
-            document.getElementById('merchantNextVisit').value = addDaysISO(getTodayISO(), 7);
-            document.getElementById('merchantFormTitle').textContent = '➕ إضافة / تعديل تاجر';
-            document.getElementById('merchantSubmitBtn').textContent = 'حفظ التاجر';
-            document.getElementById('merchantCancelBtn').classList.add('hidden');
-            document.getElementById('gpsStatusText').textContent = 'يمكنك التقاط GPS أو لصق رابط/إحداثيات يدوية ثم الضغط على "حفظ التاجر".';
-            document.getElementById('gpsStatusText').className = 'text-[11px] text-slate-500';
-        }
-
-        function copyText(text) {
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(text).then(() => alert('تم نسخ الرابط.')).catch(() => prompt('انسخ الرابط:', text));
-            } else {
-                prompt('انسخ الرابط:', text);
-            }
+            document.getElementById('editingMerchId').value = '';
+            document.getElementById('merchNameInput').value = '';
+            document.getElementById('merchAreaInput').value = '';
+            document.getElementById('merchPhoneInput').value = '';
+            document.getElementById('merchLocInput').value = '';
+            document.getElementById('merchNextVisitInput').value = plusDaysISO(todayISO(), 7);
+            document.getElementById('merchFormHeading').textContent = 'إضافة / تعديل تاجر';
+            document.getElementById('saveMerchBtn').textContent = 'حفظ التاجر';
+            document.getElementById('cancelMerchBtn').classList.add('hidden');
         }
 
         function renderMerchants() {
-            const today = getTodayISO();
-            const q = (document.getElementById('merchantSearchInput')?.value || '').trim().toLowerCase();
-            const list = loadArr(KEYS.merchants).filter(m =>
+            const q = (document.getElementById('merchSearchInput')?.value || '').trim().toLowerCase();
+            const today = todayISO();
+            const list = getList(DB.merchants).filter(m =>
                 (m.name || '').toLowerCase().includes(q) || (m.area || '').toLowerCase().includes(q)
             );
-            const container = document.getElementById('merchantsListContainer');
+            const box = document.getElementById('merchList');
             if (!list.length) {
-                container.innerHTML = '<p class="text-center text-xs text-slate-400 py-4">لا يوجد تجار مسجلون.</p>';
+                box.innerHTML = '<p class="text-center text-xs text-slate-400 py-4">لا يوجد تجار مسجلون.</p>';
                 return;
             }
-
-            container.innerHTML = list.map(m => {
-                const isDue = m.nextVisitDate && m.nextVisitDate <= today;
-                return `
-                    <div class="bg-slate-50 p-3 rounded-lg border ${isDue ? 'border-amber-400 bg-amber-50/40' : 'border-slate-200'} space-y-2">
-                        <div class="flex justify-between items-start gap-2">
-                            <div>
-                                <p class="font-bold text-sm text-slate-900">${m.name}</p>
-                                ${m.area ? `<p class="text-xs text-slate-600">📌 ${m.area}</p>` : ''}
-                                ${m.phone ? `<p class="text-xs text-slate-500">📞 ${m.phone}</p>` : ''}
-                                <p class="text-[11px] mt-0.5 font-bold ${isDue ? 'text-amber-800' : 'text-blue-800'}">
-                                    🗓️ ميعاد الزيارة القادمة: ${m.nextVisitDate || 'غير محدد'} ${isDue ? '(مستحق الآن)' : ''}
-                                </p>
-                                <p class="text-[11px] mt-0.5 ${m.gps ? 'text-emerald-700 font-bold' : 'text-slate-500'}">
-                                    ${m.gps ? '✅ الموقع محفوظ' : '⚠️ لم يتم حفظ موقع بعد'}
-                                </p>
-                            </div>
-                            <div class="flex flex-col gap-1">
-                                <div class="flex gap-1">
-                                    <button type="button" onclick="editMerchant('${m.id}')" class="bg-amber-500 text-white px-2.5 py-1 rounded text-xs font-bold">تعديل</button>
-                                    <button type="button" onclick="deleteMerchant('${m.id}')" class="bg-rose-600 text-white px-2.5 py-1 rounded text-xs font-bold">حذف</button>
-                                </div>
-                                <button type="button" onclick="markVisitedNextWeek('${m.id}')" class="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold">تمت الزيارة (+7 أيام)</button>
-                            </div>
-                        </div>
-                        ${m.gps ? `
-                            <div class="flex gap-1.5">
-                                <a href="${m.gps}" target="_blank" rel="noopener" class="flex-1 text-center bg-blue-600 hover:bg-blue-700 text-white py-1.5 rounded-lg text-xs font-bold">🗺️ فتح الخريطة</a>
-                                <button type="button" onclick="copyText('${m.gps}')" class="bg-slate-200 hover:bg-slate-300 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold">نسخ الرابط</button>
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
-            }).join('');
+            box.innerHTML = list.map(m => `
+        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-2">
+          <div class="flex justify-between items-start gap-2">
+            <div>
+              <p class="font-bold text-sm text-slate-900">${m.name}</p>
+              ${m.area ? `<p class="text-xs text-slate-600">${m.area}</p>` : ''}
+              ${m.phone ? `<p class="text-xs text-slate-500">${m.phone}</p>` : ''}
+              <p class="text-[11px] mt-0.5 font-bold ${m.nextVisit && m.nextVisit <= today ? 'text-amber-700' : 'text-blue-800'}">الزيارة القادمة: ${m.nextVisit || '-'}</p>
+            </div>
+            <div class="flex gap-1">
+              <button type="button" onclick="startEditMerchant('${m.id}')" class="bg-amber-500 text-white px-2.5 py-1 rounded text-xs font-bold">تعديل</button>
+              <button type="button" onclick="deleteMerchant('${m.id}')" class="bg-rose-600 text-white px-2.5 py-1 rounded text-xs font-bold">حذف</button>
+            </div>
+          </div>
+          ${m.loc ? `<a href="${m.loc}" target="_blank" rel="noopener" class="block text-center bg-blue-600 text-white py-1.5 rounded-lg text-xs font-bold">فتح الموقع على الخريطة</a>` : ''}
+        </div>
+      `).join('');
         }
 
-        // ================= WAREHOUSE & PRODUCTS =================
-        function saveProductForm(e) {
+        // ================= WAREHOUSE =================
+        function submitProduct(e) {
             e.preventDefault();
-            const editId = document.getElementById('productEditId').value;
-            const name = document.getElementById('prodName').value.trim();
-            const barcode = document.getElementById('prodBarcode').value.trim();
-            const defaultUnit = document.getElementById('prodDefaultUnit').value;
-            const unitsPerCarton = Math.max(1, parseFloat(document.getElementById('prodUnitsPerCarton').value) || 6);
-            const stockBoxes = Math.max(0, parseFloat(document.getElementById('prodStockBoxes').value) || 0);
-            const costPerBox = Math.max(0, parseFloat(document.getElementById('prodCostPerBox').value) || 0);
-            const sellPerBox = Math.max(0, parseFloat(document.getElementById('prodSellPerBox').value) || 0);
-            const deductBalance = document.getElementById('prodDeductBalance').checked;
+            const editId = document.getElementById('editingProdId').value;
+            const name = document.getElementById('prodNameInput').value.trim();
+            const barcode = document.getElementById('prodBarcodeInput').value.trim();
+            const defaultUnit = document.getElementById('prodUnitSelect').value;
+            const upc = Math.max(1, parseFloat(document.getElementById('prodUpcInput').value) || 6);
+            const stockBoxes = Math.max(0, parseFloat(document.getElementById('prodStockInput').value) || 0);
+            const costCarton = Math.max(0, parseFloat(document.getElementById('prodCostCartonInput').value) || 0);
+            const sellCarton = Math.max(0, parseFloat(document.getElementById('prodSellCartonInput').value) || 0);
+            if (!name) return;
 
-            if (!name) return alert('برجاء إدخال اسم الصنف.');
-
-            const products = loadArr(KEYS.products);
-
+            const list = getList(DB.products);
             if (editId) {
-                const idx = products.findIndex(p => String(p.id) === String(editId));
-                if (idx !== -1) {
-                    const old = products[idx];
-                    const diffBoxes = stockBoxes - (parseFloat(old.stockBoxes) || 0);
-                    if (deductBalance && diffBoxes > 0 && costPerBox > 0) {
-                        const extraCost = diffBoxes * costPerBox;
-                        setBalance(getBalance() - extraCost);
-                        addLedgerEntry('purchase', `زيادة مخزون صنف: ${name} (+${diffBoxes} علبة)`, extraCost);
-                    }
-                    products[idx] = { ...old, name, barcode, defaultUnit, unitsPerCarton, stockBoxes, costPerBox, sellPerBox };
-                }
+                const i = list.findIndex(x => String(x.id) === String(editId));
+                if (i !== -1) list[i] = { ...list[i], name, barcode, defaultUnit, upc, stockBoxes, costCarton, sellCarton };
             } else {
-                const newProd = {
-                    id: 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-                    name,
-                    barcode,
-                    defaultUnit,
-                    unitsPerCarton,
-                    stockBoxes,
-                    costPerBox,
-                    sellPerBox
-                };
-                products.unshift(newProd);
-
-                if (deductBalance && stockBoxes > 0 && costPerBox > 0) {
-                    const totalCost = stockBoxes * costPerBox;
-                    setBalance(getBalance() - totalCost);
-                    addLedgerEntry('purchase', `إضافة صنف للمخزن: ${name} (${stockBoxes} علبة)`, totalCost);
-                }
+                list.unshift({ id: 'p_' + Date.now(), name, barcode, defaultUnit, upc, stockBoxes, costCarton, sellCarton });
             }
-
-            saveArr(KEYS.products, products);
+            setList(DB.products, list);
             resetProductForm();
             renderWarehouse();
-            populateRestockSelect();
-            renderInvoiceProductPicker();
+            fillRestockSelect();
+            renderInvPicker();
         }
 
-        function editProductInWarehouse(id) {
-            const p = loadArr(KEYS.products).find(x => String(x.id) === String(id));
+        function startEditProduct(id) {
+            const p = getList(DB.products).find(x => String(x.id) === String(id));
             if (!p) return;
-
-            document.getElementById('productEditId').value = p.id;
-            document.getElementById('prodName').value = p.name;
-            document.getElementById('prodBarcode').value = p.barcode || '';
-            document.getElementById('prodDefaultUnit').value = p.defaultUnit || 'carton';
-            document.getElementById('prodUnitsPerCarton').value = p.unitsPerCarton || 6;
-            document.getElementById('prodStockBoxes').value = p.stockBoxes || 0;
-            document.getElementById('prodCostPerBox').value = p.costPerBox || 0;
-            document.getElementById('prodSellPerBox').value = p.sellPerBox || 0;
-
-            document.getElementById('productFormTitle').textContent = '✏️ تعديل الصنف داخل المخزن';
-            document.getElementById('productSubmitBtn').textContent = 'حفظ التعديلات';
-            document.getElementById('productCancelBtn').classList.remove('hidden');
+            document.getElementById('editingProdId').value = p.id;
+            document.getElementById('prodNameInput').value = p.name;
+            document.getElementById('prodBarcodeInput').value = p.barcode || '';
+            document.getElementById('prodUnitSelect').value = p.defaultUnit || 'carton';
+            document.getElementById('prodUpcInput').value = p.upc || 6;
+            document.getElementById('prodStockInput').value = p.stockBoxes || 0;
+            document.getElementById('prodCostCartonInput').value = p.costCarton || 0;
+            document.getElementById('prodSellCartonInput').value = p.sellCarton || 0;
+            document.getElementById('prodFormHeading').textContent = 'تعديل صنف';
+            document.getElementById('saveProdBtn').textContent = 'تحديث الصنف';
+            document.getElementById('cancelProdBtn').classList.remove('hidden');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function deleteProductFromWarehouse(id) {
-            if (!confirm('حذف هذا الصنف من المخزن؟')) return;
-            const list = loadArr(KEYS.products).filter(x => String(x.id) !== String(id));
-            saveArr(KEYS.products, list);
+        function deleteProduct(id) {
+            if (!confirm('حذف هذا الصنف؟')) return;
+            setList(DB.products, getList(DB.products).filter(x => String(x.id) !== String(id)));
             renderWarehouse();
-            populateRestockSelect();
-            renderInvoiceProductPicker();
+            fillRestockSelect();
+            renderInvPicker();
         }
 
         function resetProductForm() {
-            document.getElementById('productForm').reset();
-            document.getElementById('productEditId').value = '';
-            document.getElementById('prodUnitsPerCarton').value = 6;
-            document.getElementById('prodStockBoxes').value = 0;
-            document.getElementById('prodCostPerBox').value = 0;
-            document.getElementById('prodSellPerBox').value = 0;
-            document.getElementById('prodDeductBalance').checked = true;
-            document.getElementById('productFormTitle').textContent = '➕ إضافة صنف جديد للمخزن';
-            document.getElementById('productSubmitBtn').textContent = 'حفظ في المخزن';
-            document.getElementById('productCancelBtn').classList.add('hidden');
+            document.getElementById('editingProdId').value = '';
+            document.getElementById('prodNameInput').value = '';
+            document.getElementById('prodBarcodeInput').value = '';
+            document.getElementById('prodUnitSelect').value = 'carton';
+            document.getElementById('prodUpcInput').value = '6';
+            document.getElementById('prodStockInput').value = '0';
+            document.getElementById('prodCostCartonInput').value = '0';
+            document.getElementById('prodSellCartonInput').value = '0';
+            document.getElementById('prodFormHeading').textContent = 'إضافة / تعديل صنف';
+            document.getElementById('saveProdBtn').textContent = 'حفظ الصنف';
+            document.getElementById('cancelProdBtn').classList.add('hidden');
         }
 
-        function populateRestockSelect() {
-            const products = loadArr(KEYS.products);
-            const sel = document.getElementById('restockProductSelect');
-            if (!products.length) {
-                sel.innerHTML = '<option value="">-- أضف أصناف أولاً --</option>';
-                return;
-            }
-            sel.innerHTML = products.map(p => `<option value="${p.id}">${p.name} (متاح: ${p.stockBoxes} علبة | الكرتونة: ${p.unitsPerCarton})</option>`).join('');
+        function fillRestockSelect() {
+            const list = getList(DB.products);
+            const sel = document.getElementById('restockProdSelect');
+            sel.innerHTML = list.map(p => `<option value="${p.id}">${p.name} (متاح: ${p.stockBoxes} علبة)</option>`).join('');
         }
 
-        function restockProduct(e) {
+        function submitRestock(e) {
             e.preventDefault();
-            const prodId = document.getElementById('restockProductSelect').value;
-            const qty = parseFloat(document.getElementById('restockQty').value);
-            const unit = document.getElementById('restockUnit').value;
-            const customCostInput = document.getElementById('restockTotalCost').value;
+            const id = document.getElementById('restockProdSelect').value;
+            const qty = parseFloat(document.getElementById('restockQtyInput').value);
+            const unit = document.getElementById('restockUnitSelect').value;
+            const customCost = document.getElementById('restockCostInput').value;
+            if (!id || isNaN(qty) || qty <= 0) return;
 
-            if (!prodId || isNaN(qty) || qty <= 0) return alert('أدخل كمية صحيحة.');
-
-            const products = loadArr(KEYS.products);
-            const idx = products.findIndex(p => String(p.id) === String(prodId));
-            if (idx === -1) return;
-
-            const p = products[idx];
-            const upc = parseFloat(p.unitsPerCarton) || 6;
+            const list = getList(DB.products);
+            const i = list.findIndex(x => String(x.id) === String(id));
+            if (i === -1) return;
+            const p = list[i];
+            const upc = parseFloat(p.upc) || 6;
             const addedBoxes = unit === 'carton' ? qty * upc : qty;
-
-            const costToDeduct = customCostInput !== '' && !isNaN(parseFloat(customCostInput))
-                ? Math.max(0, parseFloat(customCostInput))
-                : addedBoxes * (parseFloat(p.costPerBox) || 0);
+            const cost = customCost !== '' && !isNaN(parseFloat(customCost))
+                ? Math.max(0, parseFloat(customCost))
+                : (unit === 'carton' ? qty * (parseFloat(p.costCarton) || 0) : addedBoxes * ((parseFloat(p.costCarton) || 0) / upc));
 
             p.stockBoxes = Number(((parseFloat(p.stockBoxes) || 0) + addedBoxes).toFixed(2));
-            products[idx] = p;
-            saveArr(KEYS.products, products);
+            list[i] = p;
+            setList(DB.products, list);
 
-            if (costToDeduct > 0) {
-                setBalance(getBalance() - costToDeduct);
-                addLedgerEntry('purchase', `توريد ${qty} ${unit === 'carton' ? 'كرتونة' : 'علبة'} من ${p.name}`, costToDeduct);
+            if (cost > 0) {
+                setBalance(getBalance() - cost);
+                logLedger('purchase', `توريد ${qty} ${unit === 'carton' ? 'كرتونة' : 'علبة'} - ${p.name}`, cost);
             }
 
-            document.getElementById('restockQty').value = '';
-            document.getElementById('restockTotalCost').value = '';
-            alert('تمت إضافة الكمية للمخزن وخصم التكلفة من الرصيد.');
-            populateRestockSelect();
+            document.getElementById('restockQtyInput').value = '';
+            document.getElementById('restockCostInput').value = '';
             renderWarehouse();
-            renderInvoiceProductPicker();
+            fillRestockSelect();
+            renderInvPicker();
+            alert('تم التوريد وخصم التكلفة من الرصيد.');
         }
 
         function renderWarehouse() {
-            const q = (document.getElementById('warehouseSearch')?.value || '').trim().toLowerCase();
-            const products = loadArr(KEYS.products).filter(p =>
+            const q = (document.getElementById('wareSearchInput')?.value || '').trim().toLowerCase();
+            const list = getList(DB.products).filter(p =>
                 (p.name || '').toLowerCase().includes(q) || (p.barcode || '').toLowerCase().includes(q)
             );
-            const container = document.getElementById('warehouseListContainer');
-
-            if (!products.length) {
-                container.innerHTML = '<p class="text-center text-xs text-slate-400 py-4">المخزن فارغ حالياً.</p>';
+            const box = document.getElementById('wareList');
+            if (!list.length) {
+                box.innerHTML = '<p class="text-center text-xs text-slate-400 py-4">لا توجد أصناف.</p>';
                 return;
             }
-
-            container.innerHTML = products.map(p => {
-                const upc = parseFloat(p.unitsPerCarton) || 6;
+            box.innerHTML = list.map(p => {
+                const upc = parseFloat(p.upc) || 6;
                 const boxes = parseFloat(p.stockBoxes) || 0;
-                const cartonsApprox = (boxes / upc).toFixed(2);
-                const sellBox = parseFloat(p.sellPerBox) || 0;
-                const sellCarton = (sellBox * upc).toFixed(2);
-                const costBox = parseFloat(p.costPerBox) || 0;
-                const costCarton = (costBox * upc).toFixed(2);
-
+                const cartons = (boxes / upc).toFixed(2);
+                const costC = parseFloat(p.costCarton) || 0;
+                const sellC = parseFloat(p.sellCarton) || 0;
                 return `
-                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-1.5">
-                        <div class="flex justify-between items-start gap-2">
-                            <div>
-                                <p class="font-bold text-sm text-slate-900">${p.name}</p>
-                                <p class="text-[11px] text-slate-500">
-                                    ${p.barcode ? `باركود: <strong>${p.barcode}</strong> • ` : ''}
-                                    الفئة: <strong>${p.defaultUnit === 'carton' ? 'كرتونة' : 'علبة'}</strong> • الكرتونة = <strong>${upc}</strong> علبة
-                                </p>
-                            </div>
-                            <div class="flex gap-1">
-                                <button type="button" onclick="editProductInWarehouse('${p.id}')" class="bg-amber-500 text-white px-2.5 py-1 rounded text-xs font-bold">تعديل</button>
-                                <button type="button" onclick="deleteProductFromWarehouse('${p.id}')" class="bg-rose-600 text-white px-2.5 py-1 rounded text-xs font-bold">حذف</button>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2 text-xs bg-white p-2 rounded border">
-                            <div>الرصيد: <strong class="text-blue-800">${boxes} علبة</strong> <span class="text-slate-500">(${cartonsApprox} كرتونة)</span></div>
-                            <div>شراء الكرتونة: <strong>${costCarton} ج.م</strong> <span class="text-slate-500">(${costBox} للعلبة)</span></div>
-                            <div>سعر بيع العلبة: <strong class="text-emerald-700">${sellBox} ج.م</strong></div>
-                            <div>سعر بيع الكرتونة: <strong class="text-emerald-700">${sellCarton} ج.م</strong></div>
-                        </div>
-                    </div>
-                `;
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-1.5">
+            <div class="flex justify-between items-start gap-2">
+              <div>
+                <p class="font-bold text-sm text-slate-900">${p.name}</p>
+                <p class="text-[11px] text-slate-500">الكرتونة = ${upc} علبة ${p.barcode ? '• باركود: ' + p.barcode : ''}</p>
+              </div>
+              <div class="flex gap-1">
+                <button type="button" onclick="startEditProduct('${p.id}')" class="bg-amber-500 text-white px-2.5 py-1 rounded text-xs font-bold">تعديل</button>
+                <button type="button" onclick="deleteProduct('${p.id}')" class="bg-rose-600 text-white px-2.5 py-1 rounded text-xs font-bold">حذف</button>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-1.5 text-xs bg-white p-2 rounded border">
+              <div>الرصيد: <strong class="text-blue-800">${boxes} علبة</strong> (${cartons} كرتونة)</div>
+              <div>شراء الكرتونة: <strong>${costC.toFixed(2)}</strong> (${(costC / upc).toFixed(2)}/علبة)</div>
+              <div>بيع الكرتونة: <strong class="text-emerald-700">${sellC.toFixed(2)}</strong></div>
+              <div>بيع العلبة: <strong class="text-emerald-700">${(sellC / upc).toFixed(2)}</strong></div>
+            </div>
+          </div>
+        `;
             }).join('');
         }
 
-        // ================= INVOICES, PAID & REMAINING =================
-        function populateInvoiceMerchants() {
-            const merchants = loadArr(KEYS.merchants);
+        // ================= INVOICES =================
+        function fillMerchantSelect() {
+            const list = getList(DB.merchants);
             const sel = document.getElementById('invMerchantSelect');
-            if (!merchants.length) {
+            if (!list.length) {
                 sel.innerHTML = '<option value="">-- أضف تاجراً من تبويب التجار أولاً --</option>';
                 return;
             }
             sel.innerHTML = '<option value="">-- اختر التاجر --</option>' +
-                merchants.map(m => `<option value="${m.id}">${m.name}${m.area ? ' - ' + m.area : ''}</option>`).join('');
-        }
-
-        function handleBarcodeEnter(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                addByBarcode();
-            }
+                list.map(m => `<option value="${m.id}">${m.name}${m.area ? ' - ' + m.area : ''}</option>`).join('');
         }
 
         function addByBarcode() {
-            const input = document.getElementById('invBarcodeInput');
-            const code = input.value.trim();
+            const inp = document.getElementById('invBarcodeInput');
+            const code = inp.value.trim();
             if (!code) return;
-
-            const prod = loadArr(KEYS.products).find(p => String(p.barcode || '').trim() === code);
-            if (!prod) {
-                alert('لم يتم العثور على صنف بهذا الباركود.');
-                return;
-            }
-            addProductToDraft(prod.id);
-            input.value = '';
-            input.focus();
+            const p = getList(DB.products).find(x => String(x.barcode || '').trim() === code);
+            if (!p) return alert('لم يتم العثور على صنف بهذا الباركود.');
+            addDraftProduct(p.id);
+            inp.value = '';
         }
 
-        function renderInvoiceProductPicker() {
-            const q = (document.getElementById('invProductSearch')?.value || '').trim().toLowerCase();
-            const products = loadArr(KEYS.products).filter(p =>
+        function renderInvPicker() {
+            const q = (document.getElementById('invSearchInput')?.value || '').trim().toLowerCase();
+            const list = getList(DB.products).filter(p =>
                 (p.name || '').toLowerCase().includes(q) || (p.barcode || '').toLowerCase().includes(q)
             );
-            const box = document.getElementById('invProductPicker');
-            if (!products.length) {
-                box.innerHTML = '<p class="text-[11px] text-slate-400 text-center py-2">لا توجد أصناف مطابقة.</p>';
-                return;
-            }
-
-            box.innerHTML = products.slice(0, 20).map(p => {
-                const upc = parseFloat(p.unitsPerCarton) || 6;
-                const price = p.defaultUnit === 'carton' ? (parseFloat(p.sellPerBox) || 0) * upc : (parseFloat(p.sellPerBox) || 0);
+            const box = document.getElementById('invPickerList');
+            box.innerHTML = list.map(p => {
+                const upc = parseFloat(p.upc) || 6;
+                const sellC = parseFloat(p.sellCarton) || 0;
+                const price = p.defaultUnit === 'box' ? sellC / upc : sellC;
                 return `
-                    <div class="flex justify-between items-center bg-white p-2 rounded border text-xs">
-                        <div>
-                            <span class="font-bold text-slate-800">${p.name}</span>
-                            <span class="block text-[11px] text-slate-500">متاح: ${p.stockBoxes} علبة • سعر الافتراضي: ${price.toFixed(2)} ج.م</span>
-                        </div>
-                        <button type="button" onclick="addProductToDraft('${p.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded text-xs font-bold">+ إضافة</button>
-                    </div>
-                `;
+          <div class="flex justify-between items-center bg-white p-2 rounded border text-xs">
+            <div>
+              <span class="font-bold">${p.name}</span>
+              <span class="block text-[11px] text-slate-500">متاح: ${p.stockBoxes} علبة • سعر: ${price.toFixed(2)} ج.م</span>
+            </div>
+            <button type="button" onclick="addDraftProduct('${p.id}')" class="bg-blue-600 text-white px-2.5 py-1 rounded text-xs font-bold">+ إضافة</button>
+          </div>
+        `;
             }).join('');
         }
 
-        function addProductToDraft(prodId) {
-            const prod = loadArr(KEYS.products).find(p => String(p.id) === String(prodId));
-            if (!prod) return;
+        function addDraftProduct(prodId) {
+            const p = getList(DB.products).find(x => String(x.id) === String(prodId));
+            if (!p) return;
+            const upc = parseFloat(p.upc) || 6;
+            const sellC = parseFloat(p.sellCarton) || 0;
+            const costC = parseFloat(p.costCarton) || 0;
+            const unit = p.defaultUnit === 'box' ? 'box' : 'carton';
+            const unitPrice = unit === 'carton' ? Number(sellC.toFixed(2)) : Number((sellC / upc).toFixed(2));
 
-            const upc = parseFloat(prod.unitsPerCarton) || 6;
-            const unit = prod.defaultUnit === 'box' ? 'box' : 'carton';
-            const unitPrice = unit === 'carton'
-                ? Number(((parseFloat(prod.sellPerBox) || 0) * upc).toFixed(2))
-                : Number((parseFloat(prod.sellPerBox) || 0).toFixed(2));
-
-            const existing = currentDraftItems.find(item => String(item.productId) === String(prod.id) && item.unit === unit);
+            const existing = draftItems.find(x => String(x.prodId) === String(p.id) && x.unit === unit);
             if (existing) {
                 existing.qty = Number((existing.qty + 1).toFixed(2));
             } else {
-                currentDraftItems.push({
-                    uid: 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-                    productId: prod.id,
-                    name: prod.name,
-                    unitsPerCarton: upc,
-                    costPerBox: parseFloat(prod.costPerBox) || 0,
+                draftItems.push({
+                    uid: 'd_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+                    prodId: p.id,
+                    name: p.name,
+                    upc,
+                    costCarton: costC,
+                    sellCarton: sellC,
                     unit,
                     qty: 1,
                     unitPrice
                 });
             }
-            paidManuallyEdited = false;
-            renderDraftInvoiceItems();
+            manualPaid = false;
+            renderDraftItems();
         }
 
         function changeDraftUnit(uid, newUnit) {
-            const item = currentDraftItems.find(x => String(x.uid) === String(uid));
-            const prod = loadArr(KEYS.products).find(p => String(p.id) === String(item?.productId));
+            const item = draftItems.find(x => String(x.uid) === String(uid));
             if (!item) return;
-
-            const upc = prod ? (parseFloat(prod.unitsPerCarton) || 6) : (item.unitsPerCarton || 6);
-            const baseBoxSell = prod ? (parseFloat(prod.sellPerBox) || 0) : (item.unit === 'carton' ? item.unitPrice / upc : item.unitPrice);
-
+            const upc = parseFloat(item.upc) || 6;
+            const sellC = parseFloat(item.sellCarton) || 0;
             item.unit = newUnit;
-            item.unitPrice = newUnit === 'carton'
-                ? Number((baseBoxSell * upc).toFixed(2))
-                : Number(baseBoxSell.toFixed(2));
-
-            paidManuallyEdited = false;
-            renderDraftInvoiceItems();
+            item.unitPrice = newUnit === 'carton' ? Number(sellC.toFixed(2)) : Number((sellC / upc).toFixed(2));
+            manualPaid = false;
+            renderDraftItems();
         }
 
-        function updateDraftItemField(uid, field, val) {
-            const item = currentDraftItems.find(x => String(x.uid) === String(uid));
+        function editDraftField(uid, field, val) {
+            const item = draftItems.find(x => String(x.uid) === String(uid));
             if (!item) return;
-            const num = parseFloat(val);
-            if (field === 'qty') {
-                item.qty = isNaN(num) || num < 0 ? 0 : num;
-            } else if (field === 'unitPrice') {
-                item.unitPrice = isNaN(num) || num < 0 ? 0 : num;
-            }
-            paidManuallyEdited = false;
-            updateDraftTotalBadge();
+            const n = parseFloat(val);
+            item[field] = isNaN(n) || n < 0 ? 0 : n;
+            manualPaid = false;
+            updateDraftTotals();
         }
 
         function removeDraftItem(uid) {
-            currentDraftItems = currentDraftItems.filter(x => String(x.uid) !== String(uid));
-            paidManuallyEdited = false;
-            renderDraftInvoiceItems();
+            draftItems = draftItems.filter(x => String(x.uid) !== String(uid));
+            manualPaid = false;
+            renderDraftItems();
         }
 
-        function getDraftGrandTotal() {
-            let total = 0;
-            currentDraftItems.forEach(i => {
-                total += (parseFloat(i.qty) || 0) * (parseFloat(i.unitPrice) || 0);
-            });
-            return Number(total.toFixed(2));
+        function draftGrandTotal() {
+            return Number(draftItems.reduce((s, x) => s + ((parseFloat(x.qty) || 0) * (parseFloat(x.unitPrice) || 0)), 0).toFixed(2));
         }
 
-        function setPaidFullAmount() {
-            paidManuallyEdited = true;
-            document.getElementById('invPaidAmount').value = getDraftGrandTotal().toFixed(2);
-            updatePaymentSummary();
+        function setPaidFull() {
+            manualPaid = true;
+            document.getElementById('invPaidInput').value = draftGrandTotal().toFixed(2);
+            refreshPaymentBox();
         }
 
         function setPaidZero() {
-            paidManuallyEdited = true;
-            document.getElementById('invPaidAmount').value = '0.00';
-            updatePaymentSummary();
+            manualPaid = true;
+            document.getElementById('invPaidInput').value = '0.00';
+            refreshPaymentBox();
         }
 
-        function updatePaymentSummary() {
-            const total = getDraftGrandTotal();
-            const paidInput = document.getElementById('invPaidAmount');
-            let paid = parseFloat(paidInput.value);
+        function refreshPaymentBox() {
+            const total = draftGrandTotal();
+            let paid = parseFloat(document.getElementById('invPaidInput').value);
             if (isNaN(paid) || paid < 0) paid = 0;
-            const remaining = Math.max(0, Number((total - paid).toFixed(2)));
-            document.getElementById('invRemainingDisplay').textContent = `${remaining.toFixed(2)} ج.م`;
+            const rem = Math.max(0, Number((total - paid).toFixed(2)));
+            document.getElementById('invRemainingBox').textContent = `${rem.toFixed(2)} ج.م`;
         }
 
-        function updateDraftTotalBadge() {
-            const total = getDraftGrandTotal();
-            document.getElementById('invLiveTotal').textContent = `الإجمالي: ${total.toFixed(2)} ج.م`;
-            if (!paidManuallyEdited) {
-                document.getElementById('invPaidAmount').value = total.toFixed(2);
-            }
-            updatePaymentSummary();
+        function updateDraftTotals() {
+            const total = draftGrandTotal();
+            document.getElementById('invTotalBadge').textContent = `الإجمالي: ${total.toFixed(2)} ج.م`;
+            if (!manualPaid) document.getElementById('invPaidInput').value = total.toFixed(2);
+            refreshPaymentBox();
         }
 
-        function renderDraftInvoiceItems() {
-            const container = document.getElementById('invSelectedItemsContainer');
-            if (!currentDraftItems.length) {
-                container.innerHTML = '<p class="text-center text-xs text-slate-400 py-3 border border-dashed rounded-lg">لم يتم إضافة أصناف بعد</p>';
-                updateDraftTotalBadge();
+        function renderDraftItems() {
+            const box = document.getElementById('invDraftItems');
+            if (!draftItems.length) {
+                box.innerHTML = '<p class="text-center text-xs text-slate-400 py-3 border border-dashed rounded-lg">لا توجد أصناف مضافة</p>';
+                updateDraftTotals();
                 return;
             }
-
-            container.innerHTML = currentDraftItems.map(item => {
-                const lineTotal = ((item.qty || 0) * (item.unitPrice || 0)).toFixed(2);
+            box.innerHTML = draftItems.map(item => {
+                const line = ((item.qty || 0) * (item.unitPrice || 0)).toFixed(2);
                 return `
-                    <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 space-y-2 text-xs">
-                        <div class="flex justify-between items-center">
-                            <span class="font-bold text-slate-900">${item.name}</span>
-                            <button type="button" onclick="removeDraftItem('${item.uid}')" class="text-rose-600 font-bold">✕</button>
-                        </div>
-                        <div class="grid grid-cols-3 gap-1.5">
-                            <div>
-                                <label class="block text-[10px] text-slate-500">الفئة</label>
-                                <select onchange="changeDraftUnit('${item.uid}', this.value)" class="w-full p-1.5 border rounded bg-white font-bold">
-                                    <option value="carton" ${item.unit === 'carton' ? 'selected' : ''}>كرتونة (${item.unitsPerCarton})</option>
-                                    <option value="box" ${item.unit === 'box' ? 'selected' : ''}>علبة</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-[10px] text-slate-500">الكمية</label>
-                                <input type="number" min="0" step="any" value="${item.qty}" oninput="updateDraftItemField('${item.uid}', 'qty', this.value)" class="w-full p-1.5 border rounded bg-white text-center font-bold">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] text-slate-500">السعر</label>
-                                <input type="number" min="0" step="0.01" value="${item.unitPrice}" oninput="updateDraftItemField('${item.uid}', 'unitPrice', this.value)" class="w-full p-1.5 border rounded bg-white text-center font-bold text-blue-800">
-                            </div>
-                        </div>
-                        <div class="text-left font-bold text-emerald-700">إجمالي الصنف: ${lineTotal} ج.م</div>
-                    </div>
-                `;
+          <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 space-y-2 text-xs">
+            <div class="flex justify-between items-center">
+              <span class="font-bold">${item.name}</span>
+              <button type="button" onclick="removeDraftItem('${item.uid}')" class="text-rose-600 font-bold">✕</button>
+            </div>
+            <div class="grid grid-cols-3 gap-1.5">
+              <select onchange="changeDraftUnit('${item.uid}', this.value)" class="p-1.5 border rounded bg-white font-bold">
+                <option value="carton" ${item.unit === 'carton' ? 'selected' : ''}>كرتونة (${item.upc})</option>
+                <option value="box" ${item.unit === 'box' ? 'selected' : ''}>علبة</option>
+              </select>
+              <input type="number" min="0" step="any" value="${item.qty}" oninput="editDraftField('${item.uid}', 'qty', this.value)" class="p-1.5 border rounded bg-white text-center font-bold">
+              <input type="number" min="0" step="0.01" value="${item.unitPrice}" oninput="editDraftField('${item.uid}', 'unitPrice', this.value)" class="p-1.5 border rounded bg-white text-center font-bold text-blue-800">
+            </div>
+            <div class="text-left font-bold text-emerald-700">الإجمالي: ${line} ج.م</div>
+          </div>
+        `;
             }).join('');
-
-            updateDraftTotalBadge();
+            updateDraftTotals();
         }
 
-        function adjustWarehouseForInvoiceItems(items, direction) {
-            const products = loadArr(KEYS.products);
-            items.forEach(item => {
-                const idx = products.findIndex(p => String(p.id) === String(item.productId));
-                if (idx !== -1) {
-                    const upc = parseFloat(products[idx].unitsPerCarton) || (parseFloat(item.unitsPerCarton) || 6);
-                    const boxes = item.unit === 'carton' ? (parseFloat(item.qty) || 0) * upc : (parseFloat(item.qty) || 0);
-                    const updated = (parseFloat(products[idx].stockBoxes) || 0) + (direction * boxes);
-                    products[idx].stockBoxes = Number(Math.max(0, updated).toFixed(2));
+        function applyStockDelta(items, sign) {
+            const list = getList(DB.products);
+            items.forEach(it => {
+                const i = list.findIndex(p => String(p.id) === String(it.prodId));
+                if (i !== -1) {
+                    const upc = parseFloat(list[i].upc) || (parseFloat(it.upc) || 6);
+                    const boxes = it.unit === 'carton' ? (parseFloat(it.qty) || 0) * upc : (parseFloat(it.qty) || 0);
+                    list[i].stockBoxes = Number(Math.max(0, (parseFloat(list[i].stockBoxes) || 0) + (sign * boxes)).toFixed(2));
                 }
             });
-            saveArr(KEYS.products, products);
+            setList(DB.products, list);
         }
 
-        function calcInvoiceProfit(items) {
-            let profit = 0;
-            items.forEach(item => {
-                const qty = parseFloat(item.qty) || 0;
-                const unitPrice = parseFloat(item.unitPrice) || 0;
-                const upc = parseFloat(item.unitsPerCarton) || 6;
-                const costPerUnit = item.unit === 'carton'
-                    ? (parseFloat(item.costPerBox) || 0) * upc
-                    : (parseFloat(item.costPerBox) || 0);
-                profit += (unitPrice - costPerUnit) * qty;
-            });
-            return Number(profit.toFixed(2));
+        function calcProfit(items) {
+            return Number(items.reduce((sum, it) => {
+                const qty = parseFloat(it.qty) || 0;
+                const price = parseFloat(it.unitPrice) || 0;
+                const upc = parseFloat(it.upc) || 6;
+                const costC = parseFloat(it.costCarton) || 0;
+                const costUnit = it.unit === 'carton' ? costC : (costC / upc);
+                return sum + ((price - costUnit) * qty);
+            }, 0).toFixed(2));
         }
 
-        function scheduleMerchantWeeklyVisit(merchantId, baseIsoDate) {
-            const merchants = loadArr(KEYS.merchants);
-            const idx = merchants.findIndex(m => String(m.id) === String(merchantId));
-            if (idx === -1) return addDaysISO(baseIsoDate, 7);
-            const nextDate = addDaysISO(baseIsoDate, 7);
-            merchants[idx].nextVisitDate = nextDate;
-            saveArr(KEYS.merchants, merchants);
-            return nextDate;
-        }
-
-        function saveInvoice(e) {
+        function submitInvoice(e) {
             e.preventDefault();
-            const merchantId = document.getElementById('invMerchantSelect').value;
-            if (!merchantId) return alert('اختر التاجر أولاً.');
+            const merchId = document.getElementById('invMerchantSelect').value;
+            const merch = getList(DB.merchants).find(m => String(m.id) === String(merchId));
+            if (!merch) return alert('اختر التاجر أولاً.');
 
-            const validItems = currentDraftItems.filter(i => (parseFloat(i.qty) || 0) > 0);
-            if (!validItems.length) return alert('أضف صنفاً واحداً بكمية أكبر من صفر.');
+            const valid = draftItems.filter(x => (parseFloat(x.qty) || 0) > 0);
+            if (!valid.length) return alert('أضف صنفاً واحداً بكمية أكبر من صفر.');
 
-            const merchant = loadArr(KEYS.merchants).find(m => String(m.id) === String(merchantId));
-            if (!merchant) return alert('بيانات التاجر غير موجودة.');
-
-            const formattedItems = validItems.map(i => ({
-                ...i,
-                qty: Number(parseFloat(i.qty).toFixed(2)),
-                unitPrice: Number(parseFloat(i.unitPrice).toFixed(2)),
-                lineTotal: Number(((parseFloat(i.qty) || 0) * (parseFloat(i.unitPrice) || 0)).toFixed(2))
+            const items = valid.map(x => ({
+                ...x,
+                qty: Number(parseFloat(x.qty).toFixed(2)),
+                unitPrice: Number(parseFloat(x.unitPrice).toFixed(2)),
+                lineTotal: Number(((parseFloat(x.qty) || 0) * (parseFloat(x.unitPrice) || 0)).toFixed(2))
             }));
 
-            const grandTotal = Number(formattedItems.reduce((sum, x) => sum + x.lineTotal, 0).toFixed(2));
-            let paidAmount = parseFloat(document.getElementById('invPaidAmount').value);
-            if (isNaN(paidAmount) || paidAmount < 0) paidAmount = 0;
-            paidAmount = Number(paidAmount.toFixed(2));
-            const remainingAmount = Math.max(0, Number((grandTotal - paidAmount).toFixed(2)));
+            const grandTotal = Number(items.reduce((s, x) => s + x.lineTotal, 0).toFixed(2));
+            let paid = parseFloat(document.getElementById('invPaidInput').value);
+            if (isNaN(paid) || paid < 0) paid = 0;
+            paid = Number(paid.toFixed(2));
+            const remaining = Math.max(0, Number((grandTotal - paid).toFixed(2)));
+            const profit = calcProfit(items);
 
-            const profit = calcInvoiceProfit(formattedItems);
-            const editingId = document.getElementById('editingInvoiceId').value;
-            const invoices = loadArr(KEYS.invoices);
+            const editId = document.getElementById('editingInvId').value;
+            const invoices = getList(DB.invoices);
 
-            if (editingId) {
-                const idx = invoices.findIndex(inv => String(inv.id) === String(editingId));
-                if (idx !== -1) {
-                    const oldInv = invoices[idx];
-                    const oldPaid = parseFloat(oldInv.paidAmount ?? oldInv.grandTotal) || 0;
-
-                    adjustWarehouseForInvoiceItems(oldInv.items || [], +1);
+            if (editId) {
+                const i = invoices.findIndex(x => String(x.id) === String(editId));
+                if (i !== -1) {
+                    const old = invoices[i];
+                    const oldPaid = parseFloat(old.paid) || 0;
+                    applyStockDelta(old.items || [], +1);
                     setBalance(getBalance() - oldPaid);
+                    applyStockDelta(items, -1);
+                    setBalance(getBalance() + paid);
+                    const diff = Number((paid - oldPaid).toFixed(2));
+                    if (diff !== 0) logLedger(diff >= 0 ? 'sale' : 'refund', `تعديل فاتورة #${old.code} - ${merch.name}`, Math.abs(diff), old.iso);
 
-                    adjustWarehouseForInvoiceItems(formattedItems, -1);
-                    setBalance(getBalance() + paidAmount);
-
-                    const paidDiff = Number((paidAmount - oldPaid).toFixed(2));
-                    if (paidDiff !== 0) {
-                        addLedgerEntry(paidDiff >= 0 ? 'sale' : 'refund', `تعديل محصل فاتورة #${oldInv.code} (${merchant.name})`, Math.abs(paidDiff), oldInv.isoDate);
-                    }
-
-                    const nextVisitDate = scheduleMerchantWeeklyVisit(merchant.id, oldInv.isoDate || getTodayISO());
-
-                    invoices[idx] = {
-                        ...oldInv,
-                        merchantId: merchant.id,
-                        merchantName: merchant.name,
-                        merchantArea: merchant.area || '',
-                        merchantPhone: merchant.phone || '',
-                        items: formattedItems,
-                        grandTotal,
-                        paidAmount,
-                        remainingAmount,
-                        nextVisitDate,
-                        profit
-                    };
-                    saveArr(KEYS.invoices, invoices);
-                    const targetId = oldInv.id;
-                    cancelInvoiceEdit();
-                    renderInvoicesList();
+                    invoices[i] = { ...old, merchId: merch.id, merchName: merch.name, merchArea: merch.area || '', merchPhone: merch.phone || '', items, grandTotal, paid, remaining, profit };
+                    setList(DB.invoices, invoices);
+                    const targetId = old.id;
+                    resetInvoiceForm();
+                    renderInvHistory();
                     renderWarehouse();
-                    renderDueVisitsBanner();
-                    openInvoiceModal(targetId);
+                    openInvModal(targetId);
                     return;
                 }
             }
 
             const code = String(Math.floor(100000 + Math.random() * 900000));
-            const isoToday = getTodayISO();
-            const nextVisitDate = scheduleMerchantWeeklyVisit(merchant.id, isoToday);
+            const iso = todayISO();
+            const nextVisit = plusDaysISO(iso, 7);
 
-            const newInv = {
-                id: 'inv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-                code,
-                merchantId: merchant.id,
-                merchantName: merchant.name,
-                merchantArea: merchant.area || '',
-                merchantPhone: merchant.phone || '',
-                items: formattedItems,
-                grandTotal,
-                paidAmount,
-                remainingAmount,
-                nextVisitDate,
-                profit,
-                isoDate: isoToday,
-                displayDate: new Date().toLocaleDateString('ar-EG') + ' ' + new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
-            };
-
-            adjustWarehouseForInvoiceItems(formattedItems, -1);
-            if (paidAmount > 0) {
-                setBalance(getBalance() + paidAmount);
-                addLedgerEntry('sale', `تحصيل فاتورة #${code} - ${merchant.name}`, paidAmount, newInv.isoDate);
+            const mList = getList(DB.merchants);
+            const mi = mList.findIndex(m => String(m.id) === String(merch.id));
+            if (mi !== -1) {
+                mList[mi].nextVisit = nextVisit;
+                setList(DB.merchants, mList);
             }
 
-            invoices.unshift(newInv);
-            saveArr(KEYS.invoices, invoices);
+            const inv = {
+                id: 'inv_' + Date.now(),
+                code,
+                merchId: merch.id,
+                merchName: merch.name,
+                merchArea: merch.area || '',
+                merchPhone: merch.phone || '',
+                items,
+                grandTotal,
+                paid,
+                remaining,
+                nextVisit,
+                profit,
+                iso,
+                dateStr: new Date().toLocaleDateString('ar-EG') + ' ' + new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+            };
 
-            currentDraftItems = [];
-            paidManuallyEdited = false;
-            document.getElementById('invoiceForm').reset();
-            renderDraftInvoiceItems();
-            renderInvoicesList();
+            applyStockDelta(items, -1);
+            if (paid > 0) {
+                setBalance(getBalance() + paid);
+                logLedger('sale', `فاتورة #${code} - ${merch.name}`, paid, iso);
+            }
+
+            invoices.unshift(inv);
+            setList(DB.invoices, invoices);
+            resetInvoiceForm();
+            renderInvHistory();
             renderWarehouse();
-            renderDueVisitsBanner();
-            openInvoiceModal(newInv.id);
+            renderDueReminders();
+            openInvModal(inv.id);
         }
 
         function startEditInvoice(id) {
-            closeInvoiceModal();
-            const inv = loadArr(KEYS.invoices).find(x => String(x.id) === String(id));
+            closeInvModal();
+            const inv = getList(DB.invoices).find(x => String(x.id) === String(id));
             if (!inv) return;
-
-            switchTab('invoices');
-            document.getElementById('editingInvoiceId').value = inv.id;
-            document.getElementById('invMerchantSelect').value = inv.merchantId || '';
-            currentDraftItems = (inv.items || []).map(x => ({
-                ...x,
-                uid: 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6)
-            }));
-
-            document.getElementById('invoiceFormTitle').textContent = `✏️ تعديل الفاتورة #${inv.code || ''}`;
-            document.getElementById('saveInvoiceBtn').textContent = '💾 حفظ تعديلات الفاتورة';
-            document.getElementById('cancelEditInvoiceBtn').classList.remove('hidden');
-
-            paidManuallyEdited = true;
-            renderDraftInvoiceItems();
-            const initPaid = inv.paidAmount !== undefined ? inv.paidAmount : inv.grandTotal;
-            document.getElementById('invPaidAmount').value = Number(initPaid || 0).toFixed(2);
-            updatePaymentSummary();
+            openPage('invoices');
+            document.getElementById('editingInvId').value = inv.id;
+            document.getElementById('invMerchantSelect').value = inv.merchId || '';
+            draftItems = (inv.items || []).map(x => ({ ...x, uid: 'd_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5) }));
+            document.getElementById('invFormHeading').textContent = `تعديل الفاتورة #${inv.code}`;
+            document.getElementById('saveInvBtn').textContent = 'حفظ التعديلات';
+            document.getElementById('cancelInvEditBtn').classList.remove('hidden');
+            manualPaid = true;
+            renderDraftItems();
+            document.getElementById('invPaidInput').value = Number(inv.paid || 0).toFixed(2);
+            refreshPaymentBox();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function cancelInvoiceEdit() {
-            currentDraftItems = [];
-            paidManuallyEdited = false;
-            document.getElementById('editingInvoiceId').value = '';
-            document.getElementById('invoiceForm').reset();
-            document.getElementById('invoiceFormTitle').textContent = '➕ فاتورة جديدة';
-            document.getElementById('saveInvoiceBtn').textContent = '✅ حفظ وعرض الفاتورة';
-            document.getElementById('cancelEditInvoiceBtn').classList.add('hidden');
-            renderDraftInvoiceItems();
+        function resetInvoiceForm() {
+            draftItems = [];
+            manualPaid = false;
+            document.getElementById('editingInvId').value = '';
+            document.getElementById('invPaidInput').value = '0';
+            document.getElementById('invFormHeading').textContent = 'فاتورة جديدة';
+            document.getElementById('saveInvBtn').textContent = 'حفظ وعرض الفاتورة';
+            document.getElementById('cancelInvEditBtn').classList.add('hidden');
+            renderDraftItems();
         }
 
         function deleteInvoice(id) {
-            if (!confirm('حذف الفاتورة وإرجاع الأصناف للمخزن وتعديل الرصيد؟')) return;
-            const invoices = loadArr(KEYS.invoices);
-            const target = invoices.find(x => String(x.id) === String(id));
+            if (!confirm('حذف الفاتورة وإرجاع الأصناف وتعديل الرصيد؟')) return;
+            const list = getList(DB.invoices);
+            const target = list.find(x => String(x.id) === String(id));
             if (!target) return;
-
-            const oldPaid = parseFloat(target.paidAmount ?? target.grandTotal) || 0;
-            adjustWarehouseForInvoiceItems(target.items || [], +1);
-            if (oldPaid > 0) {
-                setBalance(getBalance() - oldPaid);
-                addLedgerEntry('refund', `حذف فاتورة #${target.code || ''} - ${target.merchantName}`, oldPaid, target.isoDate);
+            applyStockDelta(target.items || [], +1);
+            if ((parseFloat(target.paid) || 0) > 0) {
+                setBalance(getBalance() - parseFloat(target.paid));
+                logLedger('refund', `حذف فاتورة #${target.code} - ${target.merchName}`, parseFloat(target.paid), target.iso);
             }
-
-            saveArr(KEYS.invoices, invoices.filter(x => String(x.id) !== String(id)));
-            renderInvoicesList();
+            setList(DB.invoices, list.filter(x => String(x.id) !== String(id)));
+            renderInvHistory();
             renderWarehouse();
         }
 
-        function renderInvoicesList() {
-            const invoices = loadArr(KEYS.invoices);
-            document.getElementById('invoicesBadgeCount').textContent = invoices.length;
-            const container = document.getElementById('invoicesListContainer');
-
-            if (!invoices.length) {
-                container.innerHTML = '<p class="text-center text-xs text-slate-400 py-4">لا توجد فواتير محفوظة.</p>';
+        function renderInvHistory() {
+            const list = getList(DB.invoices);
+            document.getElementById('invCountBadge').textContent = list.length;
+            const box = document.getElementById('invHistoryList');
+            if (!list.length) {
+                box.innerHTML = '<p class="text-center text-xs text-slate-400 py-4">لا توجد فواتير محفوظة.</p>';
                 return;
             }
-
-            container.innerHTML = invoices.map(inv => {
-                const grand = Number(inv.grandTotal || 0);
-                const paid = Number(inv.paidAmount !== undefined ? inv.paidAmount : grand);
-                const rem = Number(inv.remainingAmount !== undefined ? inv.remainingAmount : Math.max(0, grand - paid));
-
-                return `
-                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-2">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="font-bold text-sm text-slate-900">${inv.merchantName} <span class="text-[11px] text-slate-400">#${inv.code || ''}</span></p>
-                                <p class="text-[11px] text-slate-500">${inv.displayDate || ''}</p>
-                            </div>
-                            <span class="font-bold text-sm text-blue-900 bg-blue-100 px-2 py-0.5 rounded">${grand.toFixed(2)} ج.م</span>
-                        </div>
-                        <div class="flex justify-between text-[11px] bg-white px-2.5 py-1.5 rounded border font-bold">
-                            <span class="text-emerald-700">مدفوع: ${paid.toFixed(2)} ج.م</span>
-                            <span class="${rem > 0 ? 'text-rose-700' : 'text-slate-500'}">متبقي: ${rem.toFixed(2)} ج.م</span>
-                        </div>
-                        <div class="grid grid-cols-3 gap-1.5 pt-1">
-                            <button type="button" onclick="openInvoiceModal('${inv.id}')" class="bg-blue-700 text-white py-1.5 rounded text-xs font-bold">فتح / طباعة</button>
-                            <button type="button" onclick="startEditInvoice('${inv.id}')" class="bg-amber-500 text-white py-1.5 rounded text-xs font-bold">تعديل</button>
-                            <button type="button" onclick="deleteInvoice('${inv.id}')" class="bg-rose-600 text-white py-1.5 rounded text-xs font-bold">حذف</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+            box.innerHTML = list.map(inv => `
+        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-2">
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="font-bold text-sm text-slate-900">${inv.merchName} <span class="text-[11px] text-slate-400">#${inv.code}</span></p>
+              <p class="text-[11px] text-slate-500">${inv.dateStr || ''}</p>
+            </div>
+            <span class="font-bold text-sm text-blue-900 bg-blue-100 px-2 py-0.5 rounded">${Number(inv.grandTotal || 0).toFixed(2)} ج.م</span>
+          </div>
+          <div class="flex justify-between text-[11px] bg-white px-2.5 py-1.5 rounded border font-bold">
+            <span class="text-emerald-700">مدفوع: ${Number(inv.paid || 0).toFixed(2)}</span>
+            <span class="text-rose-700">متبقي: ${Number(inv.remaining || 0).toFixed(2)}</span>
+          </div>
+          <div class="grid grid-cols-3 gap-1.5">
+            <button type="button" onclick="openInvModal('${inv.id}')" class="bg-blue-700 text-white py-1.5 rounded text-xs font-bold">عرض / طباعة</button>
+            <button type="button" onclick="startEditInvoice('${inv.id}')" class="bg-amber-500 text-white py-1.5 rounded text-xs font-bold">تعديل</button>
+            <button type="button" onclick="deleteInvoice('${inv.id}')" class="bg-rose-600 text-white py-1.5 rounded text-xs font-bold">حذف</button>
+          </div>
+        </div>
+      `).join('');
         }
 
-        function openInvoiceModal(id) {
-            const inv = loadArr(KEYS.invoices).find(x => String(x.id) === String(id));
-            if (!inv) return alert('تعذر العثور على الفاتورة.');
+        function openInvModal(id) {
+            const inv = getList(DB.invoices).find(x => String(x.id) === String(id));
+            if (!inv) return;
+            currentModalInv = inv;
+            document.getElementById('mCode').textContent = `رقم الفاتورة: #${inv.code}`;
+            document.getElementById('mMerchant').textContent = inv.merchName || '';
+            document.getElementById('mArea').textContent = inv.merchArea || '-';
+            document.getElementById('mDate').textContent = inv.dateStr || '';
+            document.getElementById('mNextVisit').textContent = inv.nextVisit || '-';
+            document.getElementById('mTotal').textContent = Number(inv.grandTotal || 0).toFixed(2);
+            document.getElementById('mPaid').textContent = Number(inv.paid || 0).toFixed(2);
+            document.getElementById('mRemaining').textContent = Number(inv.remaining || 0).toFixed(2);
 
-            const grand = Number(inv.grandTotal || 0);
-            const paid = Number(inv.paidAmount !== undefined ? inv.paidAmount : grand);
-            const rem = Number(inv.remainingAmount !== undefined ? inv.remainingAmount : Math.max(0, grand - paid));
+            document.getElementById('mItemsBody').innerHTML = (inv.items || []).map(it => `
+        <tr>
+          <td class="border border-slate-300 p-1.5">${it.name}</td>
+          <td class="border border-slate-300 p-1.5 text-center">${it.qty} ${it.unit === 'carton' ? 'كرتونة' : 'علبة'}</td>
+          <td class="border border-slate-300 p-1.5 text-center">${Number(it.unitPrice).toFixed(2)}</td>
+          <td class="border border-slate-300 p-1.5 text-center font-bold">${Number(it.lineTotal || (it.qty * it.unitPrice)).toFixed(2)}</td>
+        </tr>
+      `).join('');
 
-            activeModalInvoice = inv;
-            document.getElementById('modalInvCode').textContent = `رقم الفاتورة: #${inv.code || ''}`;
-            document.getElementById('modalMerchantName').textContent = inv.merchantName || '';
-            document.getElementById('modalMerchantArea').textContent = inv.merchantArea || '—';
-            document.getElementById('modalInvDate').textContent = inv.displayDate || '';
-            document.getElementById('modalNextVisit').textContent = inv.nextVisitDate || addDaysISO(inv.isoDate || getTodayISO(), 7);
-            document.getElementById('modalInvTotal').textContent = grand.toFixed(2);
-            document.getElementById('modalInvPaid').textContent = paid.toFixed(2);
-            document.getElementById('modalInvRemaining').textContent = rem.toFixed(2);
+            document.getElementById('mWaBtn').onclick = () => sendWhatsApp(inv);
+            document.getElementById('mDlBtn').onclick = () => downloadInvoiceFile(inv);
+            document.getElementById('mEditBtn').onclick = () => startEditInvoice(inv.id);
 
-            document.getElementById('modalInvItemsBody').innerHTML = (inv.items || []).map(item => `
-                <tr>
-                    <td class="border border-slate-300 p-1.5">${item.name}</td>
-                    <td class="border border-slate-300 p-1.5 text-center">${item.qty} ${item.unit === 'carton' ? 'كرتونة' : 'علبة'}</td>
-                    <td class="border border-slate-300 p-1.5 text-center">${Number(item.unitPrice).toFixed(2)}</td>
-                    <td class="border border-slate-300 p-1.5 text-center font-bold">${Number(itemLineTotal(item)).toFixed(2)}</td>
-                </tr>
-            `).join('');
-
-            document.getElementById('modalWhatsappBtn').onclick = () => shareInvoiceWhatsApp(inv);
-            document.getElementById('modalDownloadTxtBtn').onclick = () => downloadInvoiceTextFile(inv);
-            document.getElementById('modalEditInvBtn').onclick = () => startEditInvoice(inv.id);
-
-            const modal = document.getElementById('invoiceModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
+            const m = document.getElementById('invModal');
+            m.classList.remove('hidden');
+            m.classList.add('flex');
         }
 
-        function closeInvoiceModal() {
-            activeModalInvoice = null;
-            const modal = document.getElementById('invoiceModal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
+        function closeInvModal() {
+            currentModalInv = null;
+            const m = document.getElementById('invModal');
+            m.classList.add('hidden');
+            m.classList.remove('flex');
         }
 
-        function buildInvoicePlainText(inv) {
-            const grand = Number(inv.grandTotal || 0);
-            const paid = Number(inv.paidAmount !== undefined ? inv.paidAmount : grand);
-            const rem = Number(inv.remainingAmount !== undefined ? inv.remainingAmount : Math.max(0, grand - paid));
-
-            let lines = [
-                `فاتورة مبيعات وتوزيع #${inv.code || ''}`,
-                `التاجر: ${inv.merchantName || ''}`,
-                `المنطقة: ${inv.merchantArea || '—'}`,
-                `التاريخ: ${inv.displayDate || ''}`,
-                `ميعاد الزيارة القادمة: ${inv.nextVisitDate || addDaysISO(inv.isoDate || getTodayISO(), 7)}`,
-                `----------------------------------------`
+        function buildInvoiceText(inv) {
+            const lines = [
+                `فاتورة #${inv.code}`,
+                `التاجر: ${inv.merchName}`,
+                `المنطقة: ${inv.merchArea || '-'}`,
+                `التاريخ: ${inv.dateStr || ''}`,
+                `الزيارة القادمة: ${inv.nextVisit || '-'}`,
+                '------------------------------'
             ];
-            (inv.items || []).forEach(i => {
-                const uLabel = i.unit === 'carton' ? 'كرتونة' : 'علبة';
-                lines.push(`${i.name} | ${i.qty} ${uLabel} x ${Number(i.unitPrice).toFixed(2)} = ${Number(itemLineTotal(i)).toFixed(2)} ج.م`);
+            (inv.items || []).forEach(it => {
+                lines.push(`${it.name} | ${it.qty} ${it.unit === 'carton' ? 'كرتونة' : 'علبة'} x ${Number(it.unitPrice).toFixed(2)} = ${Number(it.lineTotal || (it.qty * it.unitPrice)).toFixed(2)}`);
             });
-            lines.push(`----------------------------------------`);
-            lines.push(`الإجمالي: ${grand.toFixed(2)} ج.م`);
-            lines.push(`المدفوع: ${paid.toFixed(2)} ج.م`);
-            lines.push(`المتبقي: ${rem.toFixed(2)} ج.م`);
+            lines.push('------------------------------');
+            lines.push(`الإجمالي: ${Number(inv.grandTotal || 0).toFixed(2)} ج.م`);
+            lines.push(`المدفوع: ${Number(inv.paid || 0).toFixed(2)} ج.م`);
+            lines.push(`المتبقي: ${Number(inv.remaining || 0).toFixed(2)} ج.م`);
             return lines.join('\n');
         }
 
-        function downloadInvoiceTextFile(inv) {
-            const content = buildInvoicePlainText(inv);
-            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        function downloadInvoiceFile(inv) {
+            const blob = new Blob([buildInvoiceText(inv)], { type: 'text/plain;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `invoice_${inv.code || Date.now()}.txt`;
+            a.download = `invoice_${inv.code}.txt`;
             a.click();
             URL.revokeObjectURL(url);
         }
 
-        function openPrintableInvoiceWindow() {
-            if (!activeModalInvoice) return;
-            const inv = activeModalInvoice;
-            const grand = Number(inv.grandTotal || 0);
-            const paid = Number(inv.paidAmount !== undefined ? inv.paidAmount : grand);
-            const rem = Number(inv.remainingAmount !== undefined ? inv.remainingAmount : Math.max(0, grand - paid));
+        function printInvoiceNow() {
+            if (!currentModalInv) return;
+            const inv = currentModalInv;
+            const rows = (inv.items || []).map(it => `
+        <tr>
+          <td style="border:1px solid #cbd5e1;padding:6px;">${it.name}</td>
+          <td style="border:1px solid #cbd5e1;padding:6px;text-align:center;">${it.qty} ${it.unit === 'carton' ? 'كرتونة' : 'علبة'}</td>
+          <td style="border:1px solid #cbd5e1;padding:6px;text-align:center;">${Number(it.unitPrice).toFixed(2)}</td>
+          <td style="border:1px solid #cbd5e1;padding:6px;text-align:center;font-weight:bold;">${Number(it.lineTotal || (it.qty * it.unitPrice)).toFixed(2)}</td>
+        </tr>
+      `).join('');
 
-            const rowsHtml = (inv.items || []).map(item => `
-                <tr>
-                    <td style="border:1px solid #cbd5e1;padding:6px;">${item.name}</td>
-                    <td style="border:1px solid #cbd5e1;padding:6px;text-align:center;">${item.qty} ${item.unit === 'carton' ? 'كرتونة' : 'علبة'}</td>
-                    <td style="border:1px solid #cbd5e1;padding:6px;text-align:center;">${Number(item.unitPrice).toFixed(2)}</td>
-                    <td style="border:1px solid #cbd5e1;padding:6px;text-align:center;font-weight:bold;">${Number(itemLineTotal(item)).toFixed(2)}</td>
-                </tr>
-            `).join('');
-
-            const printHtml = `
-                <!DOCTYPE html>
-                <html lang="ar" dir="rtl">
-                <head>
-                    <meta charset="UTF-8">
-                    <title>فاتورة #${inv.code || ''}</title>
-                    <style>
-                        body { font-family: Arial, Tahoma, sans-serif; padding: 20px; color: #0f172a; }
-                        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; }
-                        .box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px; border-radius: 6px; font-size: 13px; }
-                        .summary p { margin: 4px 0; font-weight: bold; font-size: 14px; }
-                        @media print { .no-print { display: none; } }
-                    </style>
-                </head>
-                <body>
-                    <div class="no-print" style="margin-bottom:12px;">
-                        <button onclick="window.print()" style="padding:8px 14px;font-weight:bold;cursor:pointer;">🖨️ طباعة الآن</button>
-                    </div>
-                    <h2 style="text-align:center;margin:0 0 4px;">فاتورة مبيعات وتوزيع</h2>
-                    <p style="text-align:center;color:#64748b;margin:0 0 14px;font-size:12px;">رقم الفاتورة: #${inv.code || ''}</p>
-                    <div class="box">
-                        <div><strong>التاجر:</strong> ${inv.merchantName || ''}</div>
-                        <div><strong>المنطقة:</strong> ${inv.merchantArea || '—'}</div>
-                        <div><strong>التاريخ:</strong> ${inv.displayDate || ''}</div>
-                        <div><strong>ميعاد الزيارة القادمة:</strong> ${inv.nextVisitDate || addDaysISO(inv.isoDate || getTodayISO(), 7)}</div>
-                    </div>
-                    <table>
-                        <thead>
-                            <tr style="background:#f1f5f9;">
-                                <th style="border:1px solid #cbd5e1;padding:6px;text-align:right;">الصنف</th>
-                                <th style="border:1px solid #cbd5e1;padding:6px;">الكمية</th>
-                                <th style="border:1px solid #cbd5e1;padding:6px;">السعر</th>
-                                <th style="border:1px solid #cbd5e1;padding:6px;">الإجمالي</th>
-                            </tr>
-                        </thead>
-                        <tbody>${rowsHtml}</tbody>
-                    </table>
-                    <div class="summary">
-                        <p>الإجمالي: ${grand.toFixed(2)} ج.م</p>
-                        <p style="color:#15803d;">المدفوع: ${paid.toFixed(2)} ج.م</p>
-                        <p style="color:#b91c1c;">المتبقي: ${rem.toFixed(2)} ج.م</p>
-                    </div>
-                    <script>window.onload = function(){ setTimeout(function(){ window.print(); }, 250); };<\/script>
-                </body>
-                </html>
-            `;
-
-            const win = window.open('', '_blank');
-            if (!win) {
-                alert('المتصفح منع فتح نافذة الطباعة. اسمح بالنوافذ المنبثقة (Pop-ups) أو استخدم زر "حفظ الفاتورة كملف" أو "إرسال واتساب".');
-                return;
-            }
-            win.document.open();
-            win.document.write(printHtml);
-            win.document.close();
+            const html = `
+        <!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>فاتورة #${inv.code}</title>
+        <style>body{font-family:Arial,Tahoma,sans-serif;padding:20px}table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}@media print{.noprint{display:none}}</style></head>
+        <body>
+          <div class="noprint" style="margin-bottom:10px;"><button onclick="window.print()" style="padding:8px 14px;font-weight:bold;">طباعة</button></div>
+          <h3 style="text-align:center;margin:0;">فاتورة مبيعات #${inv.code}</h3>
+          <p style="font-size:13px;"><strong>التاجر:</strong> ${inv.merchName} | <strong>المنطقة:</strong> ${inv.merchArea || '-'}<br>
+          <strong>التاريخ:</strong> ${inv.dateStr || ''} | <strong>الزيارة القادمة:</strong> ${inv.nextVisit || '-'}</p>
+          <table><thead><tr style="background:#f1f5f9;"><th style="border:1px solid #cbd5e1;padding:6px;text-align:right;">الصنف</th><th style="border:1px solid #cbd5e1;padding:6px;">الكمية</th><th style="border:1px solid #cbd5e1;padding:6px;">السعر</th><th style="border:1px solid #cbd5e1;padding:6px;">الإجمالي</th></tr></thead><tbody>${rows}</tbody></table>
+          <p style="font-size:14px;font-weight:bold;">الإجمالي: ${Number(inv.grandTotal || 0).toFixed(2)} ج.م | المدفوع: ${Number(inv.paid || 0).toFixed(2)} ج.م | المتبقي: ${Number(inv.remaining || 0).toFixed(2)} ج.م</p>
+        </body></html>
+      `;
+            const w = window.open('', '_blank');
+            if (!w) return alert('اسمح بالنوافذ المنبثقة أو استخدم زر "تحميل ملف الفاتورة".');
+            w.document.write(html);
+            w.document.close();
+            setTimeout(() => { try { w.print(); } catch (e) { } }, 250);
         }
 
-        function shareInvoiceWhatsApp(inv) {
-            const grand = Number(inv.grandTotal || 0);
-            const paid = Number(inv.paidAmount !== undefined ? inv.paidAmount : grand);
-            const rem = Number(inv.remainingAmount !== undefined ? inv.remainingAmount : Math.max(0, grand - paid));
-
-            let txt = `🧾 *فاتورة مبيعات #${inv.code || ''}*\n`;
-            txt += `🏪 التاجر: *${inv.merchantName}*\n`;
-            if (inv.merchantArea) txt += `📍 المنطقة: ${inv.merchantArea}\n`;
-            txt += `📅 التاريخ: ${inv.displayDate || ''}\n`;
-            txt += `━━━━━━━━━━━━━━\n`;
-            (inv.items || []).forEach(i => {
-                const uLabel = i.unit === 'carton' ? 'كرتونة' : 'علبة';
-                txt += `• ${i.name} (${i.qty} ${uLabel} × ${i.unitPrice}) = *${Number(itemLineTotal(i)).toFixed(2)} ج.م*\n`;
-            });
-            txt += `━━━━━━━━━━━━━━\n`;
-            txt += `💰 الإجمالي: *${grand.toFixed(2)} ج.م*\n`;
-            txt += `✅ المدفوع: *${paid.toFixed(2)} ج.م*\n`;
-            txt += `⏳ المتبقي: *${rem.toFixed(2)} ج.م*`;
-
-            let phone = (inv.merchantPhone || '').replace(/\D/g, '');
+        function sendWhatsApp(inv) {
+            let phone = (inv.merchPhone || '').replace(/\D/g, '');
             if (phone.startsWith('01') && phone.length === 11) phone = '2' + phone;
-            const url = phone ? `https://wa.me/${phone}?text=${encodeURIComponent(txt)}` : `https://wa.me/?text=${encodeURIComponent(txt)}`;
+            const url = phone
+                ? `https://wa.me/${phone}?text=${encodeURIComponent(buildInvoiceText(inv))}`
+                : `https://wa.me/?text=${encodeURIComponent(buildInvoiceText(inv))}`;
             window.open(url, '_blank', 'noopener');
         }
 
-        function itemLineTotal(i) {
-            return parseFloat(i.lineTotal) || ((parseFloat(i.qty) || 0) * (parseFloat(i.unitPrice) || 0));
-        }
-
-        // ================= FINANCE, PROFIT & EXPENSES =================
-        function adjustBalance(sign) {
-            const amt = parseFloat(document.getElementById('balanceAdjustInput').value);
-            if (isNaN(amt) || amt <= 0) return alert('أدخل مبلغاً صحيحاً أكبر من صفر.');
-
+        // ================= FINANCE =================
+        function changeBalance(sign) {
+            const amt = parseFloat(document.getElementById('balAdjInput').value);
+            if (isNaN(amt) || amt <= 0) return alert('أدخل مبلغاً صحيحاً.');
             setBalance(getBalance() + (sign * amt));
-            addLedgerEntry('adjust', sign > 0 ? 'إضافة للرصيد' : 'خصم من الرصيد', amt);
-            document.getElementById('balanceAdjustInput').value = '';
+            logLedger('adjust', sign > 0 ? 'إضافة للرصيد' : 'خصم من الرصيد', amt);
+            document.getElementById('balAdjInput').value = '';
             renderFinance();
         }
 
-        function addExpense(e) {
+        function submitExpense(e) {
             e.preventDefault();
-            const title = document.getElementById('expenseTitle').value.trim();
-            const amount = parseFloat(document.getElementById('expenseAmount').value);
-            if (!title || isNaN(amount) || amount <= 0) return alert('أدخل بند المصروف والمبلغ بشكل صحيح.');
-
-            const iso = getTodayISO();
-            const expenses = loadArr(KEYS.expenses);
-            expenses.unshift({
-                id: 'ex_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-                title,
-                amount: Number(amount.toFixed(2)),
-                isoDate: iso,
-                displayDate: new Date().toLocaleDateString('ar-EG') + ' ' + new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
-            });
-            saveArr(KEYS.expenses, expenses);
-
+            const title = document.getElementById('expTitleInput').value.trim();
+            const amount = parseFloat(document.getElementById('expAmountInput').value);
+            if (!title || isNaN(amount) || amount <= 0) return;
+            const iso = todayISO();
+            const list = getList(DB.expenses);
+            list.unshift({ id: 'ex_' + Date.now(), title, amount: Number(amount.toFixed(2)), iso });
+            setList(DB.expenses, list);
             setBalance(getBalance() - amount);
-            addLedgerEntry('expense', `مصروف: ${title}`, amount, iso);
-
-            document.getElementById('expenseTitle').value = '';
-            document.getElementById('expenseAmount').value = '';
+            logLedger('expense', `مصروف: ${title}`, amount, iso);
+            document.getElementById('expTitleInput').value = '';
+            document.getElementById('expAmountInput').value = '';
             renderFinance();
         }
 
         function renderFinance() {
-            const today = getTodayISO();
-            const balance = getBalance();
+            const today = todayISO();
+            const bal = getBalance();
+            const todayInvs = getList(DB.invoices).filter(x => (x.iso || '') === today);
+            const sales = todayInvs.reduce((s, x) => s + (parseFloat(x.paid) || 0), 0);
+            const grossProfit = todayInvs.reduce((s, x) => s + (parseFloat(x.profit) || 0), 0);
+            const expenses = getList(DB.expenses).filter(x => (x.iso || '') === today).reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
+            const netProfit = grossProfit - expenses;
 
-            const todayInvoices = loadArr(KEYS.invoices).filter(inv => (inv.isoDate || '') === today);
-            const todayCollectedSales = todayInvoices.reduce((s, inv) => {
-                const p = inv.paidAmount !== undefined ? parseFloat(inv.paidAmount) : parseFloat(inv.grandTotal);
-                return s + (isNaN(p) ? 0 : p);
-            }, 0);
-            const todayGrossProfit = todayInvoices.reduce((s, inv) => s + (parseFloat(inv.profit) || 0), 0);
+            document.getElementById('finBalanceVal').textContent = `${bal.toFixed(2)} ج.م`;
+            document.getElementById('finSalesVal').textContent = `${sales.toFixed(2)} ج.م`;
+            document.getElementById('finExpensesVal').textContent = `${expenses.toFixed(2)} ج.م`;
+            document.getElementById('finProfitVal').textContent = `${netProfit.toFixed(2)} ج.م`;
 
-            const todayExpenses = loadArr(KEYS.expenses)
-                .filter(ex => (ex.isoDate || '') === today)
-                .reduce((s, ex) => s + (parseFloat(ex.amount) || 0), 0);
-
-            const netTodayProfit = todayGrossProfit - todayExpenses;
-
-            document.getElementById('finCurrentBalance').textContent = `${balance.toFixed(2)} ج.م`;
-            document.getElementById('finTodaySales').textContent = `${todayCollectedSales.toFixed(2)} ج.م`;
-            document.getElementById('finTodayExpenses').textContent = `${todayExpenses.toFixed(2)} ج.م`;
-            document.getElementById('finTodayProfit').textContent = `${netTodayProfit.toFixed(2)} ج.م`;
-            document.getElementById('finTodayProfit').className = `text-lg font-extrabold mt-1 ${netTodayProfit >= 0 ? 'text-emerald-700' : 'text-rose-700'}`;
-
-            const ledger = loadArr(KEYS.ledger);
-            const container = document.getElementById('ledgerListContainer');
+            const ledger = getList(DB.ledger);
+            const box = document.getElementById('ledgerList');
             if (!ledger.length) {
-                container.innerHTML = '<p class="text-center text-xs text-slate-400 py-4">لا توجد حركات مسجلة بعد.</p>';
+                box.innerHTML = '<p class="text-center text-xs text-slate-400 py-4">لا توجد حركات مسجلة.</p>';
                 return;
             }
-
-            container.innerHTML = ledger.map(entry => {
-                const isPlus = entry.type === 'sale' || (entry.type === 'adjust' && entry.title.includes('إضافة'));
+            box.innerHTML = ledger.map(x => {
+                const plus = x.kind === 'sale' || (x.kind === 'adjust' && x.title.includes('إضافة'));
                 return `
-                    <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs">
-                        <div>
-                            <p class="font-bold text-slate-800">${entry.title}</p>
-                            <p class="text-[10px] text-slate-500">${entry.displayDate || ''}</p>
-                        </div>
-                        <span class="font-bold ${isPlus ? 'text-emerald-700' : 'text-rose-700'}">
-                            ${isPlus ? '+' : '-'}${Number(entry.amount).toFixed(2)} ج.م
-                        </span>
-                    </div>
-                `;
+          <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded border text-xs">
+            <div><p class="font-bold">${x.title}</p><p class="text-[10px] text-slate-500">${x.time || ''}</p></div>
+            <span class="font-bold ${plus ? 'text-emerald-700' : 'text-rose-700'}">${plus ? '+' : '-'}${Number(x.amount).toFixed(2)} ج.م</span>
+          </div>
+        `;
             }).join('');
         }
 
-        // ================= BACKUP & RESTORE =================
-        function exportAllData() {
-            const payload = {
+        // ================= BACKUP =================
+        function exportBackup() {
+            const data = {
                 balance: getBalance(),
-                products: loadArr(KEYS.products),
-                merchants: loadArr(KEYS.merchants),
-                invoices: loadArr(KEYS.invoices),
-                expenses: loadArr(KEYS.expenses),
-                ledger: loadArr(KEYS.ledger)
+                products: getList(DB.products),
+                merchants: getList(DB.merchants),
+                invoices: getList(DB.invoices),
+                expenses: getList(DB.expenses),
+                ledger: getList(DB.ledger)
             };
-            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `distribution_backup_${getTodayISO()}.json`;
+            a.download = `backup_${todayISO()}.json`;
             a.click();
             URL.revokeObjectURL(url);
         }
 
-        function importAllData(e) {
+        function importBackup(e) {
             const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = function (ev) {
+            reader.onload = ev => {
                 try {
                     const d = JSON.parse(ev.target.result);
                     if (typeof d.balance === 'number') setBalance(d.balance);
-                    if (Array.isArray(d.products)) saveArr(KEYS.products, d.products);
-                    if (Array.isArray(d.merchants)) saveArr(KEYS.merchants, d.merchants);
-                    if (Array.isArray(d.invoices)) saveArr(KEYS.invoices, d.invoices);
-                    if (Array.isArray(d.expenses)) saveArr(KEYS.expenses, d.expenses);
-                    if (Array.isArray(d.ledger)) saveArr(KEYS.ledger, d.ledger);
-                    alert('تم استرجاع جميع البيانات بنجاح.');
-                    switchTab('invoices');
+                    if (Array.isArray(d.products)) setList(DB.products, d.products);
+                    if (Array.isArray(d.merchants)) setList(DB.merchants, d.merchants);
+                    if (Array.isArray(d.invoices)) setList(DB.invoices, d.invoices);
+                    if (Array.isArray(d.expenses)) setList(DB.expenses, d.expenses);
+                    if (Array.isArray(d.ledger)) setList(DB.ledger, d.ledger);
+                    alert('تمت الاستعادة بنجاح.');
+                    openPage('invoices');
                 } catch (err) {
                     alert('ملف النسخة الاحتياطية غير صالح.');
                 }
@@ -1714,9 +1371,11 @@
             reader.readAsText(file);
         }
 
-        initDefaultCatalog();
-        document.getElementById('merchantNextVisit').value = addDaysISO(getTodayISO(), 7);
-        switchTab('invoices');
+        if (localStorage.getItem(DB.products) === null) {
+            setList(DB.products, INITIAL_PRODUCTS);
+        }
+        document.getElementById('merchNextVisitInput').value = plusDaysISO(todayISO(), 7);
+        openPage('invoices');
     </script>
 </body>
 
