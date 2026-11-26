@@ -16,336 +16,376 @@
 
 <body class="pb-24 text-slate-800">
 
-    <!-- Header -->
-    <header class="bg-slate-900 text-white p-3.5 sticky top-0 z-20 flex justify-between items-center shadow">
-        <div>
-            <h1 class="text-base font-bold">إدارة التوزيع والمخازن</h1>
-            <p class="text-[11px] text-slate-300">فواتير • تجار ومواقع • مخزن • رصيد</p>
-        </div>
-        <div class="flex gap-1.5">
-            <button type="button" onclick="exportBackup()"
-                class="bg-slate-800 hover:bg-slate-700 text-xs px-2.5 py-1.5 rounded border border-slate-600">نسخ</button>
-            <button type="button" onclick="document.getElementById('backupInput').click()"
-                class="bg-slate-800 hover:bg-slate-700 text-xs px-2.5 py-1.5 rounded border border-slate-600">استعادة</button>
-            <input type="file" id="backupInput" accept=".json" class="hidden" onchange="importBackup(event)">
-        </div>
-    </header>
-
-    <!-- Navigation -->
-    <nav class="grid grid-cols-4 bg-white border-b sticky top-[60px] z-20 text-xs font-bold shadow-sm">
-        <button type="button" id="tabBtn-invoices" onclick="openPage('invoices')"
-            class="py-3 text-blue-700 border-b-2 border-blue-700">الفواتير</button>
-        <button type="button" id="tabBtn-merchants" onclick="openPage('merchants')"
-            class="py-3 text-slate-500 border-b-2 border-transparent">التجار</button>
-        <button type="button" id="tabBtn-warehouse" onclick="openPage('warehouse')"
-            class="py-3 text-slate-500 border-b-2 border-transparent">المخزن</button>
-        <button type="button" id="tabBtn-finance" onclick="openPage('finance')"
-            class="py-3 text-slate-500 border-b-2 border-transparent">الرصيد</button>
-    </nav>
-
-    <main class="max-w-lg mx-auto p-3 space-y-4">
-
-        <!-- Due Visits Reminder -->
-        <div id="dueBox" class="hidden bg-amber-50 border border-amber-300 rounded-xl p-3">
-            <div class="flex justify-between items-center">
-                <span class="text-xs font-bold text-amber-900">تذكير مواعيد الزيارات الأسبوعية</span>
-                <button type="button" onclick="openPage('merchants')"
-                    class="text-[11px] bg-amber-600 text-white px-2 py-0.5 rounded font-bold">التجار</button>
+    <!-- ================= AUTH SCREEN ================= -->
+    <div id="authScreen" class="min-h-screen flex items-center justify-center p-4 bg-slate-900">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-2xl space-y-4">
+            <div class="text-center space-y-1">
+                <h1 class="text-lg font-extrabold text-slate-900">إدارة التوزيع والمخازن</h1>
+                <p class="text-xs text-slate-500">سجل دخولك لفتح حسابك ومزامنة البيانات على أكتر من تليفون</p>
             </div>
-            <div id="dueList" class="mt-2 space-y-1 text-xs text-amber-950"></div>
-        </div>
 
-        <!-- ================= 1. INVOICES ================= -->
-        <section id="page-invoices" class="space-y-4">
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                <div class="flex justify-between items-center mb-3">
-                    <h2 id="invFormHeading" class="text-sm font-bold text-blue-900">فاتورة جديدة</h2>
-                    <button type="button" id="cancelInvEditBtn" onclick="resetInvoiceForm()"
-                        class="hidden text-xs bg-rose-100 text-rose-700 px-2.5 py-1 rounded font-bold">إلغاء
-                        التعديل</button>
+            <div class="grid grid-cols-2 bg-slate-100 p-1 rounded-xl text-xs font-bold">
+                <button type="button" id="modeLoginBtn" onclick="setAuthMode('login')"
+                    class="py-2 rounded-lg bg-blue-700 text-white">تسجيل دخول</button>
+                <button type="button" id="modeRegisterBtn" onclick="setAuthMode('register')"
+                    class="py-2 rounded-lg text-slate-600">حساب جديد</button>
+            </div>
+
+            <form onsubmit="handleAuthSubmit(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">اسم المستخدم *</label>
+                    <input type="text" id="authUsername" required placeholder="مثال: samih_dist"
+                        class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">كلمة المرور *</label>
+                    <input type="password" id="authPassword" required placeholder="••••••••"
+                        class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
+                </div>
+                <button type="submit" id="authSubmitBtn"
+                    class="w-full bg-blue-700 hover:bg-blue-800 text-white py-2.5 rounded-lg font-bold text-sm">دخول</button>
+            </form>
+
+            <p id="authStatusMsg" class="text-[11px] text-center text-slate-500"></p>
+        </div>
+    </div>
+
+    <!-- ================= MAIN APP ================= -->
+    <div id="appShell" class="hidden">
+
+        <!-- Header -->
+        <header class="bg-slate-900 text-white p-3.5 sticky top-0 z-20 flex justify-between items-center shadow">
+            <div>
+                <h1 class="text-base font-bold">إدارة التوزيع والمخازن</h1>
+                <p id="userSyncBar" class="text-[11px] text-emerald-300">الحساب: - • متصل</p>
+            </div>
+            <div class="flex gap-1.5">
+                <button type="button" onclick="syncNow()"
+                    class="bg-blue-700 hover:bg-blue-800 text-xs px-2.5 py-1.5 rounded font-bold">مزامنة</button>
+                <button type="button" onclick="logoutUser()"
+                    class="bg-rose-700 hover:bg-rose-800 text-xs px-2.5 py-1.5 rounded font-bold">خروج</button>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="grid grid-cols-4 bg-white border-b sticky top-[60px] z-20 text-xs font-bold shadow-sm">
+            <button type="button" id="tabBtn-invoices" onclick="openPage('invoices')"
+                class="py-3 text-blue-700 border-b-2 border-blue-700">الفواتير</button>
+            <button type="button" id="tabBtn-merchants" onclick="openPage('merchants')"
+                class="py-3 text-slate-500 border-b-2 border-transparent">التجار</button>
+            <button type="button" id="tabBtn-warehouse" onclick="openPage('warehouse')"
+                class="py-3 text-slate-500 border-b-2 border-transparent">المخزن</button>
+            <button type="button" id="tabBtn-finance" onclick="openPage('finance')"
+                class="py-3 text-slate-500 border-b-2 border-transparent">الرصيد</button>
+        </nav>
+
+        <main class="max-w-lg mx-auto p-3 space-y-4">
+
+            <!-- Due Visits Reminder -->
+            <div id="dueBox" class="hidden bg-amber-50 border border-amber-300 rounded-xl p-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold text-amber-900">تذكير مواعيد الزيارات الأسبوعية</span>
+                    <button type="button" onclick="openPage('merchants')"
+                        class="text-[11px] bg-amber-600 text-white px-2 py-0.5 rounded font-bold">التجار</button>
+                </div>
+                <div id="dueList" class="mt-2 space-y-1 text-xs text-amber-950"></div>
+            </div>
+
+            <!-- ================= 1. INVOICES ================= -->
+            <section id="page-invoices" class="space-y-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-3">
+                        <h2 id="invFormHeading" class="text-sm font-bold text-blue-900">فاتورة جديدة</h2>
+                        <button type="button" id="cancelInvEditBtn" onclick="resetInvoiceForm()"
+                            class="hidden text-xs bg-rose-100 text-rose-700 px-2.5 py-1 rounded font-bold">إلغاء
+                            التعديل</button>
+                    </div>
+
+                    <form onsubmit="submitInvoice(event)" class="space-y-3">
+                        <input type="hidden" id="editingInvId" value="">
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">اختر التاجر *</label>
+                            <select id="invMerchantSelect" required
+                                class="w-full p-2.5 border border-slate-300 rounded-lg bg-slate-50 text-sm"></select>
+                        </div>
+
+                        <div class="bg-blue-50/70 p-2.5 rounded-lg border border-blue-200 space-y-2">
+                            <label class="block text-xs font-bold text-blue-900">إضافة صنف بالباركود أو البحث
+                                بالاسم</label>
+                            <div class="flex gap-1.5">
+                                <input type="text" id="invBarcodeInput"
+                                    onkeydown="if(event.key==='Enter'){event.preventDefault();addByBarcode();}"
+                                    placeholder="باركود الصنف..."
+                                    class="flex-1 p-2 border border-blue-300 rounded-lg bg-white text-xs">
+                                <button type="button" onclick="addByBarcode()"
+                                    class="bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-bold">إضافة</button>
+                            </div>
+                            <input type="text" id="invSearchInput" oninput="renderInvPicker()"
+                                placeholder="ابحث باسم الصنف..."
+                                class="w-full p-2 border border-slate-300 rounded-lg bg-white text-xs">
+                            <div id="invPickerList" class="max-h-40 overflow-y-auto space-y-1.5 pt-1"></div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between items-center mb-1.5">
+                                <span class="text-xs font-bold text-slate-700">أصناف الفاتورة</span>
+                                <span id="invTotalBadge"
+                                    class="text-xs font-bold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded">الإجمالي:
+                                    0.00 ج.م</span>
+                            </div>
+                            <div id="invDraftItems" class="space-y-2">
+                                <p class="text-center text-xs text-slate-400 py-3 border border-dashed rounded-lg">لا
+                                    توجد أصناف مضافة</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 mb-1">المدفوع (ج.م)</label>
+                                    <input type="number" min="0" step="0.01" id="invPaidInput" value="0"
+                                        oninput="refreshPaymentBox()"
+                                        class="w-full p-2 border border-slate-300 rounded-lg bg-white text-sm font-bold text-emerald-700">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 mb-1">المتبقي (ج.م)</label>
+                                    <div id="invRemainingBox"
+                                        class="w-full p-2 border border-slate-200 rounded-lg bg-rose-50 text-sm font-extrabold text-rose-700 text-center">
+                                        0.00 ج.م</div>
+                                </div>
+                            </div>
+                            <div class="flex gap-1.5">
+                                <button type="button" onclick="setPaidFull()"
+                                    class="flex-1 bg-emerald-100 text-emerald-900 py-1.5 rounded text-[11px] font-bold">دفع
+                                    كامل</button>
+                                <button type="button" onclick="setPaidZero()"
+                                    class="bg-slate-200 text-slate-700 py-1.5 px-3 rounded text-[11px] font-bold">آجل
+                                    (0)</button>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="saveInvBtn"
+                            class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-lg font-bold text-sm">حفظ
+                            وعرض الفاتورة</button>
+                    </form>
                 </div>
 
-                <form onsubmit="submitInvoice(event)" class="space-y-3">
-                    <input type="hidden" id="editingInvId" value="">
-
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">اختر التاجر *</label>
-                        <select id="invMerchantSelect" required
-                            class="w-full p-2.5 border border-slate-300 rounded-lg bg-slate-50 text-sm"></select>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-3">
+                        <h2 class="text-sm font-bold text-slate-800">سجل الفواتير</h2>
+                        <span id="invCountBadge"
+                            class="text-xs bg-slate-200 px-2 py-0.5 rounded-full font-bold">0</span>
                     </div>
+                    <div id="invHistoryList" class="space-y-2.5"></div>
+                </div>
+            </section>
 
-                    <div class="bg-blue-50/70 p-2.5 rounded-lg border border-blue-200 space-y-2">
-                        <label class="block text-xs font-bold text-blue-900">إضافة صنف بالباركود أو البحث بالاسم</label>
-                        <div class="flex gap-1.5">
-                            <input type="text" id="invBarcodeInput"
-                                onkeydown="if(event.key==='Enter'){event.preventDefault();addByBarcode();}"
-                                placeholder="باركود الصنف..."
-                                class="flex-1 p-2 border border-blue-300 rounded-lg bg-white text-xs">
-                            <button type="button" onclick="addByBarcode()"
-                                class="bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-bold">إضافة</button>
-                        </div>
-                        <input type="text" id="invSearchInput" oninput="renderInvPicker()"
-                            placeholder="ابحث باسم الصنف..."
-                            class="w-full p-2 border border-slate-300 rounded-lg bg-white text-xs">
-                        <div id="invPickerList" class="max-h-40 overflow-y-auto space-y-1.5 pt-1"></div>
-                    </div>
+            <!-- ================= 2. MERCHANTS ================= -->
+            <section id="page-merchants" class="hidden space-y-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <h2 id="merchFormHeading" class="text-sm font-bold text-blue-900 mb-3">إضافة / تعديل تاجر</h2>
+                    <form onsubmit="submitMerchant(event)" class="space-y-2.5">
+                        <input type="hidden" id="editingMerchId" value="">
+                        <input type="text" id="merchNameInput" placeholder="اسم المحل أو التاجر *" required
+                            class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
+                        <input type="text" id="merchAreaInput" placeholder="المنطقة / القرية / العنوان"
+                            class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
+                        <input type="tel" id="merchPhoneInput" placeholder="رقم الهاتف / واتساب"
+                            class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
 
-                    <div>
-                        <div class="flex justify-between items-center mb-1.5">
-                            <span class="text-xs font-bold text-slate-700">أصناف الفاتورة</span>
-                            <span id="invTotalBadge"
-                                class="text-xs font-bold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded">الإجمالي:
-                                0.00 ج.م</span>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-600 mb-1">ميعاد الزيارة القادمة (تلقائي
+                                +7 أيام مع الفاتورة)</label>
+                            <input type="date" id="merchNextVisitInput"
+                                class="w-full p-2 border border-slate-300 rounded-lg text-xs bg-slate-50">
                         </div>
-                        <div id="invDraftItems" class="space-y-2">
-                            <p class="text-center text-xs text-slate-400 py-3 border border-dashed rounded-lg">لا توجد
-                                أصناف مضافة</p>
-                        </div>
-                    </div>
 
-                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+                        <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 space-y-2">
+                            <div class="flex gap-1.5">
+                                <button type="button" id="gpsBtn" onclick="getGPSLocation()"
+                                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-2.5 rounded-lg text-xs font-bold">التقاط
+                                    موقع GPS</button>
+                                <button type="button" onclick="openInputMap()"
+                                    class="bg-indigo-600 text-white py-2 px-2.5 rounded-lg text-xs font-bold">فتح
+                                    الخريطة</button>
+                                <button type="button" onclick="document.getElementById('merchLocInput').value=''"
+                                    class="bg-slate-200 text-slate-700 py-2 px-2 rounded-lg text-xs font-bold">مسح</button>
+                            </div>
+                            <input type="text" id="merchLocInput"
+                                placeholder="رابط الخريطة أو الإحداثيات (مثال: 30.296,31.742)"
+                                class="w-full p-2 border border-slate-300 rounded-lg bg-white text-xs">
+                            <p id="gpsMsg" class="text-[11px] text-slate-500">يمكنك التقاط الموقع أو لصق رابط/إحداثيات
+                                ثم الضغط على حفظ التاجر.</p>
+                        </div>
+
+                        <div class="flex gap-2 pt-1">
+                            <button type="submit" id="saveMerchBtn"
+                                class="flex-1 bg-blue-700 hover:bg-blue-800 text-white py-2.5 rounded-lg font-bold text-sm">حفظ
+                                التاجر</button>
+                            <button type="button" id="cancelMerchBtn" onclick="resetMerchantForm()"
+                                class="hidden bg-slate-400 text-white px-4 py-2.5 rounded-lg font-bold text-sm">إلغاء</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <input type="text" id="merchSearchInput" oninput="renderMerchants()"
+                        placeholder="بحث باسم التاجر أو المنطقة..."
+                        class="w-full p-2 border border-slate-300 rounded-lg text-sm mb-3 bg-slate-50">
+                    <div id="merchList" class="space-y-2.5"></div>
+                </div>
+            </section>
+
+            <!-- ================= 3. WAREHOUSE ================= -->
+            <section id="page-warehouse" class="hidden space-y-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <h2 id="prodFormHeading" class="text-sm font-bold text-blue-900 mb-3">إضافة / تعديل صنف</h2>
+                    <form onsubmit="submitProduct(event)" class="space-y-2.5">
+                        <input type="hidden" id="editingProdId" value="">
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="text" id="prodNameInput" placeholder="اسم الصنف والطعم *" required
+                                class="col-span-2 p-2.5 border border-slate-300 rounded-lg text-sm">
+                            <input type="text" id="prodBarcodeInput" placeholder="الباركود (اختياري)"
+                                class="p-2.5 border border-slate-300 rounded-lg text-sm">
+                            <select id="prodUnitSelect"
+                                class="p-2.5 border border-slate-300 rounded-lg text-sm bg-slate-50">
+                                <option value="carton">فئة البيع: كرتونة</option>
+                                <option value="box">فئة البيع: علبة</option>
+                            </select>
+                        </div>
+
                         <div class="grid grid-cols-2 gap-2">
                             <div>
-                                <label class="block text-[11px] font-bold text-slate-700 mb-1">المدفوع (ج.م)</label>
-                                <input type="number" min="0" step="0.01" id="invPaidInput" value="0"
-                                    oninput="refreshPaymentBox()"
-                                    class="w-full p-2 border border-slate-300 rounded-lg bg-white text-sm font-bold text-emerald-700">
+                                <label class="block text-[11px] font-bold text-slate-600 mb-1">عدد العلب في الكرتونة
+                                    *</label>
+                                <input type="number" min="1" step="1" id="prodUpcInput" value="6" required
+                                    class="w-full p-2 border border-slate-300 rounded-lg text-sm">
                             </div>
                             <div>
-                                <label class="block text-[11px] font-bold text-slate-700 mb-1">المتبقي (ج.م)</label>
-                                <div id="invRemainingBox"
-                                    class="w-full p-2 border border-slate-200 rounded-lg bg-rose-50 text-sm font-extrabold text-rose-700 text-center">
-                                    0.00 ج.م</div>
+                                <label class="block text-[11px] font-bold text-slate-600 mb-1">الكمية (بالعلبة)
+                                    *</label>
+                                <input type="number" min="0" step="any" id="prodStockInput" value="0" required
+                                    class="w-full p-2 border border-slate-300 rounded-lg text-sm">
                             </div>
                         </div>
-                        <div class="flex gap-1.5">
-                            <button type="button" onclick="setPaidFull()"
-                                class="flex-1 bg-emerald-100 text-emerald-900 py-1.5 rounded text-[11px] font-bold">دفع
-                                كامل</button>
-                            <button type="button" onclick="setPaidZero()"
-                                class="bg-slate-200 text-slate-700 py-1.5 px-3 rounded text-[11px] font-bold">آجل
-                                (0)</button>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 mb-1">سعر شراء الكرتونة (ج.م)
+                                    *</label>
+                                <input type="number" min="0" step="0.01" id="prodCostCartonInput" value="0" required
+                                    class="w-full p-2 border border-slate-300 rounded-lg text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 mb-1">سعر بيع الكرتونة (ج.م)
+                                    *</label>
+                                <input type="number" min="0" step="0.01" id="prodSellCartonInput" value="0" required
+                                    class="w-full p-2 border border-slate-300 rounded-lg text-sm">
+                            </div>
                         </div>
-                    </div>
 
-                    <button type="submit" id="saveInvBtn"
-                        class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-lg font-bold text-sm">حفظ
-                        وعرض الفاتورة</button>
-                </form>
-            </div>
-
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-sm font-bold text-slate-800">سجل الفواتير</h2>
-                    <span id="invCountBadge" class="text-xs bg-slate-200 px-2 py-0.5 rounded-full font-bold">0</span>
-                </div>
-                <div id="invHistoryList" class="space-y-2.5"></div>
-            </div>
-        </section>
-
-        <!-- ================= 2. MERCHANTS ================= -->
-        <section id="page-merchants" class="hidden space-y-4">
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                <h2 id="merchFormHeading" class="text-sm font-bold text-blue-900 mb-3">إضافة / تعديل تاجر</h2>
-                <form onsubmit="submitMerchant(event)" class="space-y-2.5">
-                    <input type="hidden" id="editingMerchId" value="">
-                    <input type="text" id="merchNameInput" placeholder="اسم المحل أو التاجر *" required
-                        class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
-                    <input type="text" id="merchAreaInput" placeholder="المنطقة / القرية / العنوان"
-                        class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
-                    <input type="tel" id="merchPhoneInput" placeholder="رقم الهاتف / واتساب"
-                        class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
-
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-600 mb-1">ميعاد الزيارة القادمة (تلقائي +7
-                            أيام مع الفاتورة)</label>
-                        <input type="date" id="merchNextVisitInput"
-                            class="w-full p-2 border border-slate-300 rounded-lg text-xs bg-slate-50">
-                    </div>
-
-                    <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 space-y-2">
-                        <div class="flex gap-1.5">
-                            <button type="button" id="gpsBtn" onclick="getGPSLocation()"
-                                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-2.5 rounded-lg text-xs font-bold">التقاط
-                                موقع GPS</button>
-                            <button type="button" onclick="openInputMap()"
-                                class="bg-indigo-600 text-white py-2 px-2.5 rounded-lg text-xs font-bold">فتح
-                                الخريطة</button>
-                            <button type="button" onclick="document.getElementById('merchLocInput').value=''"
-                                class="bg-slate-200 text-slate-700 py-2 px-2 rounded-lg text-xs font-bold">مسح</button>
+                        <div class="flex gap-2 pt-1">
+                            <button type="submit" id="saveProdBtn"
+                                class="flex-1 bg-blue-700 hover:bg-blue-800 text-white py-2.5 rounded-lg font-bold text-sm">حفظ
+                                الصنف</button>
+                            <button type="button" id="cancelProdBtn" onclick="resetProductForm()"
+                                class="hidden bg-slate-400 text-white px-4 py-2.5 rounded-lg font-bold text-sm">إلغاء</button>
                         </div>
-                        <input type="text" id="merchLocInput"
-                            placeholder="رابط الخريطة أو الإحداثيات (مثال: 30.296,31.742)"
-                            class="w-full p-2 border border-slate-300 rounded-lg bg-white text-xs">
-                        <p id="gpsMsg" class="text-[11px] text-slate-500">يمكنك التقاط الموقع أو لصق رابط/إحداثيات ثم
-                            الضغط على حفظ التاجر.</p>
-                    </div>
+                    </form>
+                </div>
 
-                    <div class="flex gap-2 pt-1">
-                        <button type="submit" id="saveMerchBtn"
-                            class="flex-1 bg-blue-700 hover:bg-blue-800 text-white py-2.5 rounded-lg font-bold text-sm">حفظ
-                            التاجر</button>
-                        <button type="button" id="cancelMerchBtn" onclick="resetMerchantForm()"
-                            class="hidden bg-slate-400 text-white px-4 py-2.5 rounded-lg font-bold text-sm">إلغاء</button>
-                    </div>
-                </form>
-            </div>
-
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                <input type="text" id="merchSearchInput" oninput="renderMerchants()"
-                    placeholder="بحث باسم التاجر أو المنطقة..."
-                    class="w-full p-2 border border-slate-300 rounded-lg text-sm mb-3 bg-slate-50">
-                <div id="merchList" class="space-y-2.5"></div>
-            </div>
-        </section>
-
-        <!-- ================= 3. WAREHOUSE ================= -->
-        <section id="page-warehouse" class="hidden space-y-4">
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                <h2 id="prodFormHeading" class="text-sm font-bold text-blue-900 mb-3">إضافة / تعديل صنف</h2>
-                <form onsubmit="submitProduct(event)" class="space-y-2.5">
-                    <input type="hidden" id="editingProdId" value="">
-                    <div class="grid grid-cols-2 gap-2">
-                        <input type="text" id="prodNameInput" placeholder="اسم الصنف والطعم *" required
-                            class="col-span-2 p-2.5 border border-slate-300 rounded-lg text-sm">
-                        <input type="text" id="prodBarcodeInput" placeholder="الباركود (اختياري)"
-                            class="p-2.5 border border-slate-300 rounded-lg text-sm">
-                        <select id="prodUnitSelect"
-                            class="p-2.5 border border-slate-300 rounded-lg text-sm bg-slate-50">
-                            <option value="carton">فئة البيع: كرتونة</option>
-                            <option value="box">فئة البيع: علبة</option>
-                        </select>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-[11px] font-bold text-slate-600 mb-1">عدد العلب في الكرتونة
-                                *</label>
-                            <input type="number" min="1" step="1" id="prodUpcInput" value="6" required
-                                class="w-full p-2 border border-slate-300 rounded-lg text-sm">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <h3 class="text-sm font-bold text-emerald-800 mb-2.5">توريد كمية لصنف قائم</h3>
+                    <form onsubmit="submitRestock(event)" class="space-y-2">
+                        <select id="restockProdSelect" required
+                            class="w-full p-2 border border-slate-300 rounded-lg text-xs bg-slate-50"></select>
+                        <div class="grid grid-cols-3 gap-2">
+                            <input type="number" min="0.01" step="any" id="restockQtyInput" placeholder="الكمية *"
+                                required class="p-2 border border-slate-300 rounded-lg text-xs">
+                            <select id="restockUnitSelect"
+                                class="p-2 border border-slate-300 rounded-lg text-xs bg-slate-50">
+                                <option value="carton">كرتونة</option>
+                                <option value="box">علبة</option>
+                            </select>
+                            <input type="number" min="0" step="0.01" id="restockCostInput"
+                                placeholder="التكلفة (اختياري)" class="p-2 border border-slate-300 rounded-lg text-xs">
                         </div>
-                        <div>
-                            <label class="block text-[11px] font-bold text-slate-600 mb-1">الكمية (بالعلبة) *</label>
-                            <input type="number" min="0" step="any" id="prodStockInput" value="0" required
-                                class="w-full p-2 border border-slate-300 rounded-lg text-sm">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-[11px] font-bold text-slate-600 mb-1">سعر شراء الكرتونة (ج.م)
-                                *</label>
-                            <input type="number" min="0" step="0.01" id="prodCostCartonInput" value="0" required
-                                class="w-full p-2 border border-slate-300 rounded-lg text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-bold text-slate-600 mb-1">سعر بيع الكرتونة (ج.م)
-                                *</label>
-                            <input type="number" min="0" step="0.01" id="prodSellCartonInput" value="0" required
-                                class="w-full p-2 border border-slate-300 rounded-lg text-sm">
-                        </div>
-                    </div>
-
-                    <div class="flex gap-2 pt-1">
-                        <button type="submit" id="saveProdBtn"
-                            class="flex-1 bg-blue-700 hover:bg-blue-800 text-white py-2.5 rounded-lg font-bold text-sm">حفظ
-                            الصنف</button>
-                        <button type="button" id="cancelProdBtn" onclick="resetProductForm()"
-                            class="hidden bg-slate-400 text-white px-4 py-2.5 rounded-lg font-bold text-sm">إلغاء</button>
-                    </div>
-                </form>
-            </div>
-
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                <h3 class="text-sm font-bold text-emerald-800 mb-2.5">توريد كمية لصنف قائم</h3>
-                <form onsubmit="submitRestock(event)" class="space-y-2">
-                    <select id="restockProdSelect" required
-                        class="w-full p-2 border border-slate-300 rounded-lg text-xs bg-slate-50"></select>
-                    <div class="grid grid-cols-3 gap-2">
-                        <input type="number" min="0.01" step="any" id="restockQtyInput" placeholder="الكمية *" required
-                            class="p-2 border border-slate-300 rounded-lg text-xs">
-                        <select id="restockUnitSelect"
-                            class="p-2 border border-slate-300 rounded-lg text-xs bg-slate-50">
-                            <option value="carton">كرتونة</option>
-                            <option value="box">علبة</option>
-                        </select>
-                        <input type="number" min="0" step="0.01" id="restockCostInput" placeholder="التكلفة (اختياري)"
-                            class="p-2 border border-slate-300 rounded-lg text-xs">
-                    </div>
-                    <button type="submit"
-                        class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg text-xs font-bold">إضافة
-                        للمخزن وخصم التكلفة من الرصيد</button>
-                </form>
-            </div>
-
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-sm font-bold text-slate-800">جرد المخزن</h3>
-                    <input type="text" id="wareSearchInput" oninput="renderWarehouse()" placeholder="بحث..."
-                        class="w-32 p-1.5 border border-slate-300 rounded text-xs">
-                </div>
-                <div id="wareList" class="space-y-2.5"></div>
-            </div>
-        </section>
-
-        <!-- ================= 4. FINANCE ================= -->
-        <section id="page-finance" class="hidden space-y-4">
-            <div class="grid grid-cols-2 gap-2.5">
-                <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
-                    <p class="text-[11px] text-slate-500 font-bold">الرصيد الحالي</p>
-                    <p id="finBalanceVal" class="text-lg font-extrabold text-blue-800 mt-1">0.00 ج.م</p>
-                </div>
-                <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
-                    <p class="text-[11px] text-slate-500 font-bold">صافي أرباح اليوم</p>
-                    <p id="finProfitVal" class="text-lg font-extrabold text-emerald-700 mt-1">0.00 ج.م</p>
-                </div>
-                <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
-                    <p class="text-[11px] text-slate-500 font-bold">مبيعات اليوم (المحصل)</p>
-                    <p id="finSalesVal" class="text-sm font-bold text-slate-800 mt-1">0.00 ج.م</p>
-                </div>
-                <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
-                    <p class="text-[11px] text-slate-500 font-bold">مصاريف اليوم</p>
-                    <p id="finExpensesVal" class="text-sm font-bold text-rose-700 mt-1">0.00 ج.م</p>
-                </div>
-            </div>
-
-            <div
-                class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between gap-2">
-                <div class="text-xs">
-                    <p class="font-bold text-slate-700">تعديل الرصيد</p>
-                    <p class="text-[11px] text-slate-500">إضافة أو خصم مبلغ من الرصيد</p>
-                </div>
-                <div class="flex gap-1.5">
-                    <input type="number" step="0.01" id="balAdjInput" placeholder="مبلغ"
-                        class="w-24 p-1.5 border border-slate-300 rounded text-xs">
-                    <button type="button" onclick="changeBalance(1)"
-                        class="bg-emerald-600 text-white px-2.5 py-1.5 rounded text-xs font-bold">+</button>
-                    <button type="button" onclick="changeBalance(-1)"
-                        class="bg-rose-600 text-white px-2.5 py-1.5 rounded text-xs font-bold">-</button>
-                </div>
-            </div>
-
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                <h3 class="text-sm font-bold text-rose-800 mb-2.5">تسجيل مصروف (يُخصم من الرصيد)</h3>
-                <form onsubmit="submitExpense(event)" class="space-y-2.5">
-                    <input type="text" id="expTitleInput" placeholder="بند المصروف (مثال: بنزين، صيانة) *" required
-                        class="w-full p-2 border border-slate-300 rounded-lg text-sm">
-                    <div class="flex gap-2">
-                        <input type="number" min="0.01" step="0.01" id="expAmountInput" placeholder="المبلغ *" required
-                            class="flex-1 p-2 border border-slate-300 rounded-lg text-sm">
                         <button type="submit"
-                            class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-xs font-bold">تسجيل</button>
+                            class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg text-xs font-bold">إضافة
+                            للمخزن وخصم التكلفة من الرصيد</button>
+                    </form>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-sm font-bold text-slate-800">جرد المخزن</h3>
+                        <input type="text" id="wareSearchInput" oninput="renderWarehouse()" placeholder="بحث..."
+                            class="w-32 p-1.5 border border-slate-300 rounded text-xs">
                     </div>
-                </form>
-            </div>
+                    <div id="wareList" class="space-y-2.5"></div>
+                </div>
+            </section>
 
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                <h3 class="text-sm font-bold text-slate-800 mb-3">سجل الحركات</h3>
-                <div id="ledgerList" class="space-y-2 max-h-80 overflow-y-auto"></div>
-            </div>
-        </section>
+            <!-- ================= 4. FINANCE ================= -->
+            <section id="page-finance" class="hidden space-y-4">
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+                        <p class="text-[11px] text-slate-500 font-bold">الرصيد الحالي</p>
+                        <p id="finBalanceVal" class="text-lg font-extrabold text-blue-800 mt-1">0.00 ج.م</p>
+                    </div>
+                    <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+                        <p class="text-[11px] text-slate-500 font-bold">صافي أرباح اليوم</p>
+                        <p id="finProfitVal" class="text-lg font-extrabold text-emerald-700 mt-1">0.00 ج.م</p>
+                    </div>
+                    <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+                        <p class="text-[11px] text-slate-500 font-bold">مبيعات اليوم (المحصل)</p>
+                        <p id="finSalesVal" class="text-sm font-bold text-slate-800 mt-1">0.00 ج.م</p>
+                    </div>
+                    <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+                        <p class="text-[11px] text-slate-500 font-bold">مصاريف اليوم</p>
+                        <p id="finExpensesVal" class="text-sm font-bold text-rose-700 mt-1">0.00 ج.م</p>
+                    </div>
+                </div>
 
-    </main>
+                <div
+                    class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between gap-2">
+                    <div class="text-xs">
+                        <p class="font-bold text-slate-700">تعديل الرصيد</p>
+                        <p class="text-[11px] text-slate-500">إضافة أو خصم مبلغ من الرصيد</p>
+                    </div>
+                    <div class="flex gap-1.5">
+                        <input type="number" step="0.01" id="balAdjInput" placeholder="مبلغ"
+                            class="w-24 p-1.5 border border-slate-300 rounded text-xs">
+                        <button type="button" onclick="changeBalance(1)"
+                            class="bg-emerald-600 text-white px-2.5 py-1.5 rounded text-xs font-bold">+</button>
+                        <button type="button" onclick="changeBalance(-1)"
+                            class="bg-rose-600 text-white px-2.5 py-1.5 rounded text-xs font-bold">-</button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <h3 class="text-sm font-bold text-rose-800 mb-2.5">تسجيل مصروف (يُخصم من الرصيد)</h3>
+                    <form onsubmit="submitExpense(event)" class="space-y-2.5">
+                        <input type="text" id="expTitleInput" placeholder="بند المصروف (مثال: بنزين، صيانة) *" required
+                            class="w-full p-2 border border-slate-300 rounded-lg text-sm">
+                        <div class="flex gap-2">
+                            <input type="number" min="0.01" step="0.01" id="expAmountInput" placeholder="المبلغ *"
+                                required class="flex-1 p-2 border border-slate-300 rounded-lg text-sm">
+                            <button type="submit"
+                                class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-xs font-bold">تسجيل</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <h3 class="text-sm font-bold text-slate-800 mb-3">سجل الحركات</h3>
+                    <div id="ledgerList" class="space-y-2 max-h-80 overflow-y-auto"></div>
+                </div>
+            </section>
+
+        </main>
+    </div>
 
     <!-- ================= INVOICE MODAL ================= -->
     <div id="invModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-3 z-50">
@@ -396,15 +436,9 @@
     </div>
 
     <script>
-        const DB = {
-            products: 'dist_v7_products',
-            merchants: 'dist_v7_merchants',
-            invoices: 'dist_v7_invoices',
-            expenses: 'dist_v7_expenses',
-            ledger: 'dist_v7_ledger',
-            balance: 'dist_v7_balance'
-        };
+        const FIREBASE_DB_URL = 'https://samih-a143f-default-rtdb.firebaseio.com';
 
+        const SESSION_KEY = 'dist_v8_session';
         const INITIAL_PRODUCTS = [
             { id: 'p1', name: 'تشوكو ميكس - فراولة', barcode: '', defaultUnit: 'carton', upc: 6, stockBoxes: 0, costCarton: 250, sellCarton: 0 },
             { id: 'p2', name: 'تشوكو ميكس - شيكولاتة', barcode: '', defaultUnit: 'carton', upc: 6, stockBoxes: 0, costCarton: 250, sellCarton: 0 },
@@ -425,30 +459,277 @@
             { id: 'p17', name: 'فور ايفر', barcode: '', defaultUnit: 'carton', upc: 6, stockBoxes: 0, costCarton: 260, sellCarton: 0 }
         ];
 
+        let authMode = 'login';
+        let currentUserKey = '';
+        let currentUsername = '';
+        let activePageName = 'invoices';
+        let syncTimer = null;
+
+        let state = {
+            balance: 0,
+            products: JSON.parse(JSON.stringify(INITIAL_PRODUCTS)),
+            merchants: [],
+            invoices: [],
+            expenses: [],
+            ledger: [],
+            updatedAt: 0
+        };
+
         let draftItems = [];
         let currentModalInv = null;
         let manualPaid = false;
 
-        function getList(key) {
+        function sanitizeUsername(u) {
+            return u.trim().toLowerCase().replace(/[^a-z0-9_\u0600-\u06FF-]/g, '_');
+        }
+
+        async function hashSecret(str) {
+            const buf = new TextEncoder().encode(str);
+            const digest = await crypto.subtle.digest('SHA-256', buf);
+            return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        function setAuthMode(mode) {
+            authMode = mode;
+            const loginBtn = document.getElementById('modeLoginBtn');
+            const regBtn = document.getElementById('modeRegisterBtn');
+            const subBtn = document.getElementById('authSubmitBtn');
+            if (mode === 'login') {
+                loginBtn.className = 'py-2 rounded-lg bg-blue-700 text-white';
+                regBtn.className = 'py-2 rounded-lg text-slate-600';
+                subBtn.textContent = 'دخول';
+            } else {
+                regBtn.className = 'py-2 rounded-lg bg-emerald-600 text-white';
+                loginBtn.className = 'py-2 rounded-lg text-slate-600';
+                subBtn.textContent = 'إنشاء حساب';
+            }
+            document.getElementById('authStatusMsg').textContent = '';
+        }
+
+        function isCloudConfigured() {
+            return FIREBASE_DB_URL && !FIREBASE_DB_URL.includes('YOUR-PROJECT-ID');
+        }
+
+        async function cloudGet(path) {
+            if (!isCloudConfigured()) return null;
+            const res = await fetch(`${FIREBASE_DB_URL}/${path}.json`);
+            if (!res.ok) throw new Error('Cloud read failed');
+            return await res.json();
+        }
+
+        async function cloudPut(path, payload) {
+            if (!isCloudConfigured()) return false;
+            const res = await fetch(`${FIREBASE_DB_URL}/${path}.json`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) throw new Error('Cloud write failed');
+            return true;
+        }
+
+        function localAccountKey(ukey) {
+            return 'dist_v8_acc_' + ukey;
+        }
+
+        function saveLocalState() {
+            if (!currentUserKey) return;
+            localStorage.setItem(localAccountKey(currentUserKey), JSON.stringify(state));
+        }
+
+        function loadLocalState(ukey) {
             try {
-                const raw = localStorage.getItem(key);
-                return raw ? JSON.parse(raw) : [];
+                const raw = localStorage.getItem(localAccountKey(ukey));
+                if (!raw) return null;
+                return JSON.parse(raw);
             } catch (e) {
-                return [];
+                return null;
             }
         }
 
-        function setList(key, arr) {
-            localStorage.setItem(key, JSON.stringify(arr));
+        async function pushCloudState() {
+            if (!currentUserKey) return;
+            state.updatedAt = Date.now();
+            saveLocalState();
+            if (!isCloudConfigured()) {
+                document.getElementById('userSyncBar').textContent = `الحساب: ${currentUsername} • محلي فقط`;
+                return;
+            }
+            try {
+                await cloudPut(`accounts/${currentUserKey}/data`, state);
+                document.getElementById('userSyncBar').textContent = `الحساب: ${currentUsername} • تمت المزامنة`;
+            } catch (e) {
+                document.getElementById('userSyncBar').textContent = `الحساب: ${currentUsername} • تعذر المزامنة`;
+            }
+        }
+
+        async function pullCloudState(forceRender = true) {
+            if (!currentUserKey || !isCloudConfigured()) return;
+            try {
+                const remote = await cloudGet(`accounts/${currentUserKey}/data`);
+                if (remote && (remote.updatedAt || 0) >= (state.updatedAt || 0)) {
+                    state = {
+                        balance: parseFloat(remote.balance) || 0,
+                        products: Array.isArray(remote.products) && remote.products.length ? remote.products : JSON.parse(JSON.stringify(INITIAL_PRODUCTS)),
+                        merchants: Array.isArray(remote.merchants) ? remote.merchants : [],
+                        invoices: Array.isArray(remote.invoices) ? remote.invoices : [],
+                        expenses: Array.isArray(remote.expenses) ? remote.expenses : [],
+                        ledger: Array.isArray(remote.ledger) ? remote.ledger : [],
+                        updatedAt: remote.updatedAt || Date.now()
+                    };
+                    saveLocalState();
+                    if (forceRender) refreshActiveView();
+                    document.getElementById('userSyncBar').textContent = `الحساب: ${currentUsername} • محدث`;
+                }
+            } catch (e) {
+                document.getElementById('userSyncBar').textContent = `الحساب: ${currentUsername} • وضع غير متصل`;
+            }
+        }
+
+        async function handleAuthSubmit(e) {
+            e.preventDefault();
+            const rawUser = document.getElementById('authUsername').value.trim();
+            const pass = document.getElementById('authPassword').value;
+            const msg = document.getElementById('authStatusMsg');
+            const ukey = sanitizeUsername(rawUser);
+
+            if (!ukey || pass.length < 3) {
+                msg.textContent = 'أدخل اسم مستخدم صحيح وكلمة مرور 3 أحرف على الأقل.';
+                msg.className = 'text-[11px] text-center text-rose-600 font-bold';
+                return;
+            }
+
+            const passHash = await hashSecret(pass);
+            msg.textContent = 'جاري التحقق...';
+            msg.className = 'text-[11px] text-center text-blue-700 font-bold';
+
+            if (isCloudConfigured()) {
+                try {
+                    const authRec = await cloudGet(`accounts/${ukey}/auth`);
+                    if (authMode === 'register') {
+                        if (authRec) {
+                            msg.textContent = 'اسم المستخدم مسجل بالفعل. اختر تسجيل دخول.';
+                            msg.className = 'text-[11px] text-center text-rose-600 font-bold';
+                            return;
+                        }
+                        const fresh = {
+                            balance: 0,
+                            products: JSON.parse(JSON.stringify(INITIAL_PRODUCTS)),
+                            merchants: [],
+                            invoices: [],
+                            expenses: [],
+                            ledger: [],
+                            updatedAt: Date.now()
+                        };
+                        await cloudPut(`accounts/${ukey}/auth`, { username: rawUser, passHash, createdAt: Date.now() });
+                        await cloudPut(`accounts/${ukey}/data`, fresh);
+                        state = fresh;
+                    } else {
+                        if (!authRec || authRec.passHash !== passHash) {
+                            msg.textContent = 'اسم المستخدم أو كلمة المرور غير صحيحة.';
+                            msg.className = 'text-[11px] text-center text-rose-600 font-bold';
+                            return;
+                        }
+                        const remoteData = await cloudGet(`accounts/${ukey}/data`);
+                        state = remoteData ? {
+                            balance: parseFloat(remoteData.balance) || 0,
+                            products: Array.isArray(remoteData.products) && remoteData.products.length ? remoteData.products : JSON.parse(JSON.stringify(INITIAL_PRODUCTS)),
+                            merchants: Array.isArray(remoteData.merchants) ? remoteData.merchants : [],
+                            invoices: Array.isArray(remoteData.invoices) ? remoteData.invoices : [],
+                            expenses: Array.isArray(remoteData.expenses) ? remoteData.expenses : [],
+                            ledger: Array.isArray(remoteData.ledger) ? remoteData.ledger : [],
+                            updatedAt: remoteData.updatedAt || Date.now()
+                        } : {
+                            balance: 0,
+                            products: JSON.parse(JSON.stringify(INITIAL_PRODUCTS)),
+                            merchants: [],
+                            invoices: [],
+                            expenses: [],
+                            ledger: [],
+                            updatedAt: Date.now()
+                        };
+                    }
+                } catch (err) {
+                    msg.textContent = 'تعذر الاتصال بقاعدة البيانات السحابية. تحقق من رابط Firebase.';
+                    msg.className = 'text-[11px] text-center text-rose-600 font-bold';
+                    return;
+                }
+            } else {
+                const localAuthKey = 'dist_v8_auth_' + ukey;
+                const localAuth = JSON.parse(localStorage.getItem(localAuthKey) || 'null');
+                if (authMode === 'register') {
+                    if (localAuth) {
+                        msg.textContent = 'اسم المستخدم موجود محلياً. اختر تسجيل دخول.';
+                        msg.className = 'text-[11px] text-center text-rose-600 font-bold';
+                        return;
+                    }
+                    localStorage.setItem(localAuthKey, JSON.stringify({ username: rawUser, passHash }));
+                    state = {
+                        balance: 0,
+                        products: JSON.parse(JSON.stringify(INITIAL_PRODUCTS)),
+                        merchants: [],
+                        invoices: [],
+                        expenses: [],
+                        ledger: [],
+                        updatedAt: Date.now()
+                    };
+                } else {
+                    if (!localAuth || localAuth.passHash !== passHash) {
+                        msg.textContent = 'اسم المستخدم أو كلمة المرور غير صحيحة.';
+                        msg.className = 'text-[11px] text-center text-rose-600 font-bold';
+                        return;
+                    }
+                    state = loadLocalState(ukey) || {
+                        balance: 0,
+                        products: JSON.parse(JSON.stringify(INITIAL_PRODUCTS)),
+                        merchants: [],
+                        invoices: [],
+                        expenses: [],
+                        ledger: [],
+                        updatedAt: Date.now()
+                    };
+                }
+            }
+
+            currentUserKey = ukey;
+            currentUsername = rawUser;
+            localStorage.setItem(SESSION_KEY, JSON.stringify({ ukey, username: rawUser }));
+            saveLocalState();
+            enterApp();
+        }
+
+        function enterApp() {
+            document.getElementById('authScreen').classList.add('hidden');
+            document.getElementById('appShell').classList.remove('hidden');
+            document.getElementById('userSyncBar').textContent = `الحساب: ${currentUsername} • جاهز`;
+            document.getElementById('merchNextVisitInput').value = plusDaysISO(todayISO(), 7);
+            openPage('invoices');
+            if (syncTimer) clearInterval(syncTimer);
+            syncTimer = setInterval(() => pullCloudState(true), 8000);
+        }
+
+        function logoutUser() {
+            if (syncTimer) clearInterval(syncTimer);
+            localStorage.removeItem(SESSION_KEY);
+            currentUserKey = '';
+            currentUsername = '';
+            document.getElementById('appShell').classList.add('hidden');
+            document.getElementById('authScreen').classList.remove('hidden');
+            document.getElementById('authPassword').value = '';
+        }
+
+        async function syncNow() {
+            await pushCloudState();
+            await pullCloudState(true);
         }
 
         function getBalance() {
-            const n = parseFloat(localStorage.getItem(DB.balance));
+            const n = parseFloat(state.balance);
             return isNaN(n) ? 0 : n;
         }
 
         function setBalance(n) {
-            localStorage.setItem(DB.balance, Number(n).toFixed(2));
+            state.balance = Number(Number(n).toFixed(2));
         }
 
         function todayISO() {
@@ -462,9 +743,8 @@
         }
 
         function logLedger(kind, title, amount, iso = null) {
-            const list = getList(DB.ledger);
             const now = new Date();
-            list.unshift({
+            state.ledger.unshift({
                 id: 'lg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
                 kind,
                 title,
@@ -472,10 +752,10 @@
                 iso: iso || todayISO(),
                 time: now.toLocaleDateString('ar-EG') + ' ' + now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
             });
-            setList(DB.ledger, list);
         }
 
         function openPage(page) {
+            activePageName = page;
             ['invoices', 'merchants', 'warehouse', 'finance'].forEach(p => {
                 document.getElementById('page-' + p).classList.add('hidden');
                 const b = document.getElementById('tabBtn-' + p);
@@ -486,19 +766,22 @@
             const active = document.getElementById('tabBtn-' + page);
             active.classList.remove('text-slate-500', 'border-transparent');
             active.classList.add('text-blue-700', 'border-blue-700');
+            refreshActiveView();
+        }
 
+        function refreshActiveView() {
             renderDueReminders();
-            if (page === 'invoices') {
+            if (activePageName === 'invoices') {
                 fillMerchantSelect();
                 renderInvPicker();
                 renderDraftItems();
                 renderInvHistory();
-            } else if (page === 'merchants') {
+            } else if (activePageName === 'merchants') {
                 renderMerchants();
-            } else if (page === 'warehouse') {
+            } else if (activePageName === 'warehouse') {
                 fillRestockSelect();
                 renderWarehouse();
-            } else if (page === 'finance') {
+            } else if (activePageName === 'finance') {
                 renderFinance();
             }
         }
@@ -506,7 +789,7 @@
         // ================= REMINDERS =================
         function renderDueReminders() {
             const today = todayISO();
-            const due = getList(DB.merchants).filter(m => m.nextVisit && m.nextVisit <= today);
+            const due = state.merchants.filter(m => m.nextVisit && m.nextVisit <= today);
             const box = document.getElementById('dueBox');
             const list = document.getElementById('dueList');
             if (!due.length) {
@@ -522,12 +805,11 @@
       `).join('');
         }
 
-        function bumpVisit(id) {
-            const list = getList(DB.merchants);
-            const i = list.findIndex(x => String(x.id) === String(id));
+        async function bumpVisit(id) {
+            const i = state.merchants.findIndex(x => String(x.id) === String(id));
             if (i === -1) return;
-            list[i].nextVisit = plusDaysISO(todayISO(), 7);
-            setList(DB.merchants, list);
+            state.merchants[i].nextVisit = plusDaysISO(todayISO(), 7);
+            await pushCloudState();
             renderDueReminders();
             renderMerchants();
         }
@@ -580,7 +862,7 @@
             window.open(link, '_blank', 'noopener');
         }
 
-        function submitMerchant(e) {
+        async function submitMerchant(e) {
             e.preventDefault();
             const editId = document.getElementById('editingMerchId').value;
             const name = document.getElementById('merchNameInput').value.trim();
@@ -590,14 +872,13 @@
             const loc = formatMapLink(document.getElementById('merchLocInput').value);
             if (!name) return;
 
-            const list = getList(DB.merchants);
             if (editId) {
-                const i = list.findIndex(x => String(x.id) === String(editId));
-                if (i !== -1) list[i] = { ...list[i], name, area, phone, nextVisit, loc };
+                const i = state.merchants.findIndex(x => String(x.id) === String(editId));
+                if (i !== -1) state.merchants[i] = { ...state.merchants[i], name, area, phone, nextVisit, loc };
             } else {
-                list.unshift({ id: 'm_' + Date.now(), name, area, phone, nextVisit, loc });
+                state.merchants.unshift({ id: 'm_' + Date.now(), name, area, phone, nextVisit, loc });
             }
-            setList(DB.merchants, list);
+            await pushCloudState();
             resetMerchantForm();
             renderMerchants();
             fillMerchantSelect();
@@ -606,7 +887,7 @@
         }
 
         function startEditMerchant(id) {
-            const m = getList(DB.merchants).find(x => String(x.id) === String(id));
+            const m = state.merchants.find(x => String(x.id) === String(id));
             if (!m) return;
             document.getElementById('editingMerchId').value = m.id;
             document.getElementById('merchNameInput').value = m.name || '';
@@ -620,9 +901,10 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function deleteMerchant(id) {
+        async function deleteMerchant(id) {
             if (!confirm('حذف هذا التاجر؟')) return;
-            setList(DB.merchants, getList(DB.merchants).filter(x => String(x.id) !== String(id)));
+            state.merchants = state.merchants.filter(x => String(x.id) !== String(id));
+            await pushCloudState();
             renderMerchants();
             fillMerchantSelect();
             renderDueReminders();
@@ -643,7 +925,7 @@
         function renderMerchants() {
             const q = (document.getElementById('merchSearchInput')?.value || '').trim().toLowerCase();
             const today = todayISO();
-            const list = getList(DB.merchants).filter(m =>
+            const list = state.merchants.filter(m =>
                 (m.name || '').toLowerCase().includes(q) || (m.area || '').toLowerCase().includes(q)
             );
             const box = document.getElementById('merchList');
@@ -671,7 +953,7 @@
         }
 
         // ================= WAREHOUSE =================
-        function submitProduct(e) {
+        async function submitProduct(e) {
             e.preventDefault();
             const editId = document.getElementById('editingProdId').value;
             const name = document.getElementById('prodNameInput').value.trim();
@@ -683,14 +965,13 @@
             const sellCarton = Math.max(0, parseFloat(document.getElementById('prodSellCartonInput').value) || 0);
             if (!name) return;
 
-            const list = getList(DB.products);
             if (editId) {
-                const i = list.findIndex(x => String(x.id) === String(editId));
-                if (i !== -1) list[i] = { ...list[i], name, barcode, defaultUnit, upc, stockBoxes, costCarton, sellCarton };
+                const i = state.products.findIndex(x => String(x.id) === String(editId));
+                if (i !== -1) state.products[i] = { ...state.products[i], name, barcode, defaultUnit, upc, stockBoxes, costCarton, sellCarton };
             } else {
-                list.unshift({ id: 'p_' + Date.now(), name, barcode, defaultUnit, upc, stockBoxes, costCarton, sellCarton });
+                state.products.unshift({ id: 'p_' + Date.now(), name, barcode, defaultUnit, upc, stockBoxes, costCarton, sellCarton });
             }
-            setList(DB.products, list);
+            await pushCloudState();
             resetProductForm();
             renderWarehouse();
             fillRestockSelect();
@@ -698,7 +979,7 @@
         }
 
         function startEditProduct(id) {
-            const p = getList(DB.products).find(x => String(x.id) === String(id));
+            const p = state.products.find(x => String(x.id) === String(id));
             if (!p) return;
             document.getElementById('editingProdId').value = p.id;
             document.getElementById('prodNameInput').value = p.name;
@@ -714,9 +995,10 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function deleteProduct(id) {
+        async function deleteProduct(id) {
             if (!confirm('حذف هذا الصنف؟')) return;
-            setList(DB.products, getList(DB.products).filter(x => String(x.id) !== String(id)));
+            state.products = state.products.filter(x => String(x.id) !== String(id));
+            await pushCloudState();
             renderWarehouse();
             fillRestockSelect();
             renderInvPicker();
@@ -737,12 +1019,11 @@
         }
 
         function fillRestockSelect() {
-            const list = getList(DB.products);
             const sel = document.getElementById('restockProdSelect');
-            sel.innerHTML = list.map(p => `<option value="${p.id}">${p.name} (متاح: ${p.stockBoxes} علبة)</option>`).join('');
+            sel.innerHTML = state.products.map(p => `<option value="${p.id}">${p.name} (متاح: ${p.stockBoxes} علبة)</option>`).join('');
         }
 
-        function submitRestock(e) {
+        async function submitRestock(e) {
             e.preventDefault();
             const id = document.getElementById('restockProdSelect').value;
             const qty = parseFloat(document.getElementById('restockQtyInput').value);
@@ -750,10 +1031,9 @@
             const customCost = document.getElementById('restockCostInput').value;
             if (!id || isNaN(qty) || qty <= 0) return;
 
-            const list = getList(DB.products);
-            const i = list.findIndex(x => String(x.id) === String(id));
+            const i = state.products.findIndex(x => String(x.id) === String(id));
             if (i === -1) return;
-            const p = list[i];
+            const p = state.products[i];
             const upc = parseFloat(p.upc) || 6;
             const addedBoxes = unit === 'carton' ? qty * upc : qty;
             const cost = customCost !== '' && !isNaN(parseFloat(customCost))
@@ -761,14 +1041,14 @@
                 : (unit === 'carton' ? qty * (parseFloat(p.costCarton) || 0) : addedBoxes * ((parseFloat(p.costCarton) || 0) / upc));
 
             p.stockBoxes = Number(((parseFloat(p.stockBoxes) || 0) + addedBoxes).toFixed(2));
-            list[i] = p;
-            setList(DB.products, list);
+            state.products[i] = p;
 
             if (cost > 0) {
                 setBalance(getBalance() - cost);
                 logLedger('purchase', `توريد ${qty} ${unit === 'carton' ? 'كرتونة' : 'علبة'} - ${p.name}`, cost);
             }
 
+            await pushCloudState();
             document.getElementById('restockQtyInput').value = '';
             document.getElementById('restockCostInput').value = '';
             renderWarehouse();
@@ -779,7 +1059,7 @@
 
         function renderWarehouse() {
             const q = (document.getElementById('wareSearchInput')?.value || '').trim().toLowerCase();
-            const list = getList(DB.products).filter(p =>
+            const list = state.products.filter(p =>
                 (p.name || '').toLowerCase().includes(q) || (p.barcode || '').toLowerCase().includes(q)
             );
             const box = document.getElementById('wareList');
@@ -818,21 +1098,20 @@
 
         // ================= INVOICES =================
         function fillMerchantSelect() {
-            const list = getList(DB.merchants);
             const sel = document.getElementById('invMerchantSelect');
-            if (!list.length) {
+            if (!state.merchants.length) {
                 sel.innerHTML = '<option value="">-- أضف تاجراً من تبويب التجار أولاً --</option>';
                 return;
             }
             sel.innerHTML = '<option value="">-- اختر التاجر --</option>' +
-                list.map(m => `<option value="${m.id}">${m.name}${m.area ? ' - ' + m.area : ''}</option>`).join('');
+                state.merchants.map(m => `<option value="${m.id}">${m.name}${m.area ? ' - ' + m.area : ''}</option>`).join('');
         }
 
         function addByBarcode() {
             const inp = document.getElementById('invBarcodeInput');
             const code = inp.value.trim();
             if (!code) return;
-            const p = getList(DB.products).find(x => String(x.barcode || '').trim() === code);
+            const p = state.products.find(x => String(x.barcode || '').trim() === code);
             if (!p) return alert('لم يتم العثور على صنف بهذا الباركود.');
             addDraftProduct(p.id);
             inp.value = '';
@@ -840,7 +1119,7 @@
 
         function renderInvPicker() {
             const q = (document.getElementById('invSearchInput')?.value || '').trim().toLowerCase();
-            const list = getList(DB.products).filter(p =>
+            const list = state.products.filter(p =>
                 (p.name || '').toLowerCase().includes(q) || (p.barcode || '').toLowerCase().includes(q)
             );
             const box = document.getElementById('invPickerList');
@@ -861,7 +1140,7 @@
         }
 
         function addDraftProduct(prodId) {
-            const p = getList(DB.products).find(x => String(x.id) === String(prodId));
+            const p = state.products.find(x => String(x.id) === String(prodId));
             if (!p) return;
             const upc = parseFloat(p.upc) || 6;
             const sellC = parseFloat(p.sellCarton) || 0;
@@ -977,16 +1256,14 @@
         }
 
         function applyStockDelta(items, sign) {
-            const list = getList(DB.products);
             items.forEach(it => {
-                const i = list.findIndex(p => String(p.id) === String(it.prodId));
+                const i = state.products.findIndex(p => String(p.id) === String(it.prodId));
                 if (i !== -1) {
-                    const upc = parseFloat(list[i].upc) || (parseFloat(it.upc) || 6);
+                    const upc = parseFloat(state.products[i].upc) || (parseFloat(it.upc) || 6);
                     const boxes = it.unit === 'carton' ? (parseFloat(it.qty) || 0) * upc : (parseFloat(it.qty) || 0);
-                    list[i].stockBoxes = Number(Math.max(0, (parseFloat(list[i].stockBoxes) || 0) + (sign * boxes)).toFixed(2));
+                    state.products[i].stockBoxes = Number(Math.max(0, (parseFloat(state.products[i].stockBoxes) || 0) + (sign * boxes)).toFixed(2));
                 }
             });
-            setList(DB.products, list);
         }
 
         function calcProfit(items) {
@@ -1000,10 +1277,10 @@
             }, 0).toFixed(2));
         }
 
-        function submitInvoice(e) {
+        async function submitInvoice(e) {
             e.preventDefault();
             const merchId = document.getElementById('invMerchantSelect').value;
-            const merch = getList(DB.merchants).find(m => String(m.id) === String(merchId));
+            const merch = state.merchants.find(m => String(m.id) === String(merchId));
             if (!merch) return alert('اختر التاجر أولاً.');
 
             const valid = draftItems.filter(x => (parseFloat(x.qty) || 0) > 0);
@@ -1024,12 +1301,11 @@
             const profit = calcProfit(items);
 
             const editId = document.getElementById('editingInvId').value;
-            const invoices = getList(DB.invoices);
 
             if (editId) {
-                const i = invoices.findIndex(x => String(x.id) === String(editId));
+                const i = state.invoices.findIndex(x => String(x.id) === String(editId));
                 if (i !== -1) {
-                    const old = invoices[i];
+                    const old = state.invoices[i];
                     const oldPaid = parseFloat(old.paid) || 0;
                     applyStockDelta(old.items || [], +1);
                     setBalance(getBalance() - oldPaid);
@@ -1038,9 +1314,9 @@
                     const diff = Number((paid - oldPaid).toFixed(2));
                     if (diff !== 0) logLedger(diff >= 0 ? 'sale' : 'refund', `تعديل فاتورة #${old.code} - ${merch.name}`, Math.abs(diff), old.iso);
 
-                    invoices[i] = { ...old, merchId: merch.id, merchName: merch.name, merchArea: merch.area || '', merchPhone: merch.phone || '', items, grandTotal, paid, remaining, profit };
-                    setList(DB.invoices, invoices);
+                    state.invoices[i] = { ...old, merchId: merch.id, merchName: merch.name, merchArea: merch.area || '', merchPhone: merch.phone || '', items, grandTotal, paid, remaining, profit };
                     const targetId = old.id;
+                    await pushCloudState();
                     resetInvoiceForm();
                     renderInvHistory();
                     renderWarehouse();
@@ -1053,12 +1329,8 @@
             const iso = todayISO();
             const nextVisit = plusDaysISO(iso, 7);
 
-            const mList = getList(DB.merchants);
-            const mi = mList.findIndex(m => String(m.id) === String(merch.id));
-            if (mi !== -1) {
-                mList[mi].nextVisit = nextVisit;
-                setList(DB.merchants, mList);
-            }
+            const mi = state.merchants.findIndex(m => String(m.id) === String(merch.id));
+            if (mi !== -1) state.merchants[mi].nextVisit = nextVisit;
 
             const inv = {
                 id: 'inv_' + Date.now(),
@@ -1083,8 +1355,8 @@
                 logLedger('sale', `فاتورة #${code} - ${merch.name}`, paid, iso);
             }
 
-            invoices.unshift(inv);
-            setList(DB.invoices, invoices);
+            state.invoices.unshift(inv);
+            await pushCloudState();
             resetInvoiceForm();
             renderInvHistory();
             renderWarehouse();
@@ -1094,7 +1366,7 @@
 
         function startEditInvoice(id) {
             closeInvModal();
-            const inv = getList(DB.invoices).find(x => String(x.id) === String(id));
+            const inv = state.invoices.find(x => String(x.id) === String(id));
             if (!inv) return;
             openPage('invoices');
             document.getElementById('editingInvId').value = inv.id;
@@ -1121,30 +1393,29 @@
             renderDraftItems();
         }
 
-        function deleteInvoice(id) {
+        async function deleteInvoice(id) {
             if (!confirm('حذف الفاتورة وإرجاع الأصناف وتعديل الرصيد؟')) return;
-            const list = getList(DB.invoices);
-            const target = list.find(x => String(x.id) === String(id));
+            const target = state.invoices.find(x => String(x.id) === String(id));
             if (!target) return;
             applyStockDelta(target.items || [], +1);
             if ((parseFloat(target.paid) || 0) > 0) {
                 setBalance(getBalance() - parseFloat(target.paid));
                 logLedger('refund', `حذف فاتورة #${target.code} - ${target.merchName}`, parseFloat(target.paid), target.iso);
             }
-            setList(DB.invoices, list.filter(x => String(x.id) !== String(id)));
+            state.invoices = state.invoices.filter(x => String(x.id) !== String(id));
+            await pushCloudState();
             renderInvHistory();
             renderWarehouse();
         }
 
         function renderInvHistory() {
-            const list = getList(DB.invoices);
-            document.getElementById('invCountBadge').textContent = list.length;
+            document.getElementById('invCountBadge').textContent = state.invoices.length;
             const box = document.getElementById('invHistoryList');
-            if (!list.length) {
+            if (!state.invoices.length) {
                 box.innerHTML = '<p class="text-center text-xs text-slate-400 py-4">لا توجد فواتير محفوظة.</p>';
                 return;
             }
-            box.innerHTML = list.map(inv => `
+            box.innerHTML = state.invoices.map(inv => `
         <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-2">
           <div class="flex justify-between items-start">
             <div>
@@ -1167,7 +1438,7 @@
         }
 
         function openInvModal(id) {
-            const inv = getList(DB.invoices).find(x => String(x.id) === String(id));
+            const inv = state.invoices.find(x => String(x.id) === String(id));
             if (!inv) return;
             currentModalInv = inv;
             document.getElementById('mCode').textContent = `رقم الفاتورة: #${inv.code}`;
@@ -1274,26 +1545,26 @@
         }
 
         // ================= FINANCE =================
-        function changeBalance(sign) {
+        async function changeBalance(sign) {
             const amt = parseFloat(document.getElementById('balAdjInput').value);
             if (isNaN(amt) || amt <= 0) return alert('أدخل مبلغاً صحيحاً.');
             setBalance(getBalance() + (sign * amt));
             logLedger('adjust', sign > 0 ? 'إضافة للرصيد' : 'خصم من الرصيد', amt);
+            await pushCloudState();
             document.getElementById('balAdjInput').value = '';
             renderFinance();
         }
 
-        function submitExpense(e) {
+        async function submitExpense(e) {
             e.preventDefault();
             const title = document.getElementById('expTitleInput').value.trim();
             const amount = parseFloat(document.getElementById('expAmountInput').value);
             if (!title || isNaN(amount) || amount <= 0) return;
             const iso = todayISO();
-            const list = getList(DB.expenses);
-            list.unshift({ id: 'ex_' + Date.now(), title, amount: Number(amount.toFixed(2)), iso });
-            setList(DB.expenses, list);
+            state.expenses.unshift({ id: 'ex_' + Date.now(), title, amount: Number(amount.toFixed(2)), iso });
             setBalance(getBalance() - amount);
             logLedger('expense', `مصروف: ${title}`, amount, iso);
+            await pushCloudState();
             document.getElementById('expTitleInput').value = '';
             document.getElementById('expAmountInput').value = '';
             renderFinance();
@@ -1302,10 +1573,10 @@
         function renderFinance() {
             const today = todayISO();
             const bal = getBalance();
-            const todayInvs = getList(DB.invoices).filter(x => (x.iso || '') === today);
+            const todayInvs = state.invoices.filter(x => (x.iso || '') === today);
             const sales = todayInvs.reduce((s, x) => s + (parseFloat(x.paid) || 0), 0);
             const grossProfit = todayInvs.reduce((s, x) => s + (parseFloat(x.profit) || 0), 0);
-            const expenses = getList(DB.expenses).filter(x => (x.iso || '') === today).reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
+            const expenses = state.expenses.filter(x => (x.iso || '') === today).reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
             const netProfit = grossProfit - expenses;
 
             document.getElementById('finBalanceVal').textContent = `${bal.toFixed(2)} ج.م`;
@@ -1313,13 +1584,12 @@
             document.getElementById('finExpensesVal').textContent = `${expenses.toFixed(2)} ج.م`;
             document.getElementById('finProfitVal').textContent = `${netProfit.toFixed(2)} ج.م`;
 
-            const ledger = getList(DB.ledger);
             const box = document.getElementById('ledgerList');
-            if (!ledger.length) {
+            if (!state.ledger.length) {
                 box.innerHTML = '<p class="text-center text-xs text-slate-400 py-4">لا توجد حركات مسجلة.</p>';
                 return;
             }
-            box.innerHTML = ledger.map(x => {
+            box.innerHTML = state.ledger.map(x => {
                 const plus = x.kind === 'sale' || (x.kind === 'adjust' && x.title.includes('إضافة'));
                 return `
           <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded border text-xs">
@@ -1330,52 +1600,16 @@
             }).join('');
         }
 
-        // ================= BACKUP =================
-        function exportBackup() {
-            const data = {
-                balance: getBalance(),
-                products: getList(DB.products),
-                merchants: getList(DB.merchants),
-                invoices: getList(DB.invoices),
-                expenses: getList(DB.expenses),
-                ledger: getList(DB.ledger)
-            };
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `backup_${todayISO()}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        function importBackup(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = ev => {
-                try {
-                    const d = JSON.parse(ev.target.result);
-                    if (typeof d.balance === 'number') setBalance(d.balance);
-                    if (Array.isArray(d.products)) setList(DB.products, d.products);
-                    if (Array.isArray(d.merchants)) setList(DB.merchants, d.merchants);
-                    if (Array.isArray(d.invoices)) setList(DB.invoices, d.invoices);
-                    if (Array.isArray(d.expenses)) setList(DB.expenses, d.expenses);
-                    if (Array.isArray(d.ledger)) setList(DB.ledger, d.ledger);
-                    alert('تمت الاستعادة بنجاح.');
-                    openPage('invoices');
-                } catch (err) {
-                    alert('ملف النسخة الاحتياطية غير صالح.');
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        if (localStorage.getItem(DB.products) === null) {
-            setList(DB.products, INITIAL_PRODUCTS);
-        }
-        document.getElementById('merchNextVisitInput').value = plusDaysISO(todayISO(), 7);
-        openPage('invoices');
+        (async function boot() {
+            const savedSession = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+            if (savedSession && savedSession.ukey) {
+                currentUserKey = savedSession.ukey;
+                currentUsername = savedSession.username || savedSession.ukey;
+                state = loadLocalState(currentUserKey) || state;
+                enterApp();
+                await pullCloudState(true);
+            }
+        })();
     </script>
 </body>
 
